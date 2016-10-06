@@ -18,6 +18,7 @@ jmespath==0.2.1
 nose==1.2.1
 odict==1.5.1
 openpyxl==2.2.0
+peewee==2.8.5
 ply==3.4
 psycopg2==2.6.2
 pyasn1==0.1.7
