@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import copy
-from cStringIO import StringIO
+from io import StringIO
 from fnmatch import fnmatch
 import gzip
 import hashlib
@@ -12,7 +12,7 @@ import os
 from boto.s3.key import Key
 
 import app_config
-import utils
+from . import utils
 
 logging.basicConfig(format=app_config.LOG_FORMAT)
 logger = logging.getLogger(__name__)

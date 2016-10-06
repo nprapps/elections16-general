@@ -44,7 +44,7 @@ def install_font(force='true'):
     """
     Install font
     """
-    print 'Installing font'
+    print('Installing font')
     if force != 'true':
         try:
             with open('www/css/icon/npr-app-template.css') and open('www/css/font/npr-app-template.svg'):

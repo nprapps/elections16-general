@@ -3,7 +3,6 @@ import os
 
 from app_config import authomatic
 from authomatic.adapters import WerkzeugAdapter
-from exceptions import KeyError
 from flask import Blueprint, make_response, redirect, render_template, url_for
 from functools import wraps
 from render_utils import make_context

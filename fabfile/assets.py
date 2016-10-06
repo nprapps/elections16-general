@@ -9,7 +9,7 @@ import os
 from fabric.api import prompt, task
 import app_config
 from fnmatch import fnmatch
-import utils
+from . import utils
 
 logging.basicConfig(format=app_config.LOG_FORMAT)
 logger = logging.getLogger(__name__)

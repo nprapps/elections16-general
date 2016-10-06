@@ -11,7 +11,9 @@ from fabric.state import env
 from models import models
 
 import copytext
-import servers
+from . import servers
+
+variable_name = 'test'
 
 @task
 def bootstrap_db():

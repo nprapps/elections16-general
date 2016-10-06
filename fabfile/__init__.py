@@ -12,14 +12,14 @@ from termcolor import colored
 import app_config
 
 # Other fabfiles
-import assets
-import data
-import flat
-import issues
-import render
-import text
-import utils
-import spreadsheet
+from . import assets
+from . import data
+from . import flat
+from . import issues
+from . import render
+from . import text
+from . import utils
+from . import spreadsheet
 
 if app_config.DEPLOY_TO_SERVERS:
     import servers

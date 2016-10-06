@@ -9,7 +9,6 @@ import urllib
 import subprocess
 
 from flask import Markup, g, render_template, request
-from slimit import minify
 from smartypants import smartypants
 
 import app_config
@@ -188,7 +187,7 @@ def make_context(asset_depth=0):
     except copytext.CopyException:
         pass
 
-    context['JS'] = JavascriptIncluder(asset_depth=asset_depth)
+    # context['JS'] = JavascriptIncluder(asset_depth=asset_depth)
     context['CSS'] = CSSIncluder(asset_depth=asset_depth)
 
     return context

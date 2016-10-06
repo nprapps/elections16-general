@@ -25,8 +25,8 @@ def update():
 
     credentials = get_credentials()
     if not credentials:
-        print logger.warn('No Google OAuth credentials file found.')
-        print logger.warn('Run `fab app` and visit `http://localhost:8000` to generate credentials.')
+        logger.warn('No Google OAuth credentials file found.')
+        logger.warn('Run `fab app` and visit `http://localhost:8000` to generate credentials.')
         return
 
     get_document(app_config.COPY_GOOGLE_DOC_KEY, app_config.COPY_PATH)

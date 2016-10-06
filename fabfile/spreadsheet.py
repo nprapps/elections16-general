@@ -17,7 +17,7 @@ def open_spreadsheet(key=None):
     if key:
         pass
     elif not app_config.COPY_GOOGLE_DOC_KEY:
-        print 'There seems to be no spreadsheet linked to this app. (COPY_GOOGLE_DOC_KEY is not defined in app_config.py.)'
+        print('There seems to be no spreadsheet linked to this app. (COPY_GOOGLE_DOC_KEY is not defined in app_config.py.)')
         return
     else:
         key = app_config.COPY_GOOGLE_DOC_KEY
