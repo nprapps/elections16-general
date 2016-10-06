@@ -31,6 +31,8 @@ class Result(BaseModel):
     description = CharField(null=True)
     delegatecount = IntegerField(null=True)
     electiondate = DateField(null=True)
+    electtotal = IntegerField(null=True)
+    electwon = IntegerField(null=True)
     fipscode = CharField(max_length=5, null=True)
     first = CharField(null=True)
     incumbent = BooleanField(null=True)

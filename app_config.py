@@ -20,7 +20,7 @@ NAMES
 """
 # Project name to be used in urls
 # Use dashes, not underscores!
-PROJECT_SLUG = 'elections16-general'
+PROJECT_SLUG = 'elections16'
 
 # Project name to be used in file paths
 PROJECT_FILENAME = 'elections16_general'
@@ -138,6 +138,9 @@ Logging
 """
 LOG_FORMAT = '%(levelname)s:%(name)s:%(asctime)s: %(message)s'
 
+NEXT_ELECTION_DATE = '2012-11-06'
+ELEX_FLAGS = '--national-only'
+ELEX_DELEGATE_FLAGS = ''
 """
 Utilities
 """
