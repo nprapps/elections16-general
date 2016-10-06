@@ -146,8 +146,7 @@ def render_presidential_state_results():
     json_string = _write_json(results)
 
     filename = 'presidential-national.json'
-    with open('.rendered/{0}'.format(filename), 'w') as f:
-        f.write(json_string)
+    _write_json_file(json_string, filename)
 
 @task
 def render_presidential_county_results():
@@ -163,8 +162,7 @@ def render_presidential_county_results():
         json_string = _write_json(results)
 
         filename = 'presidential-{0}-counties.json'.format(state.statepostal.lower())
-        with open('.rendered/{0}'.format(filename), 'w') as f:
-            f.write(json_string)
+        _write_json_file(json_string, filename)
 
 @task
 def render_governor_results():
@@ -175,8 +173,7 @@ def render_governor_results():
     json_string = _write_json(results)
 
     filename = 'governor-national.json'
-    with open('.rendered/{0}'.format(filename), 'w') as f:
-        f.write(json_string)
+    _write_json_file(json_string, filename)
 
 @task
 def render_senate_results():
@@ -187,8 +184,7 @@ def render_senate_results():
     json_string = _write_json(results)
 
     filename = 'senate-national.json'
-    with open('.rendered/{0}'.format(filename), 'w') as f:
-        f.write(json_string)
+    _write_json_file(json_string, filename)
 
 def _write_json(results):
     serialized_results = []
@@ -198,6 +194,10 @@ def _write_json(results):
         serialized_results.append(obj)
 
     return json.dumps(serialized_results, use_decimal=True, cls=utils.APDatetimeEncoder)
+
+def _write_json_file(json_string, filename): 
+    with open('.rendered/{0}'.format(filename), 'w') as f:
+        f.write(json_string)
 
 @task
 def render_state_results():
