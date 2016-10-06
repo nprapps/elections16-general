@@ -86,12 +86,12 @@ def ap_date_filter(value):
     """
     Converts a date string in m/d/yyyy format into AP style.
     """
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         value = datetime.strptime(value, '%m/%d/%Y')
     value_tz = _set_timezone(value)
     output = AP_MONTHS[value_tz.month - 1]
-    output += ' ' + unicode(value_tz.day)
-    output += ', ' + unicode(value_tz.year)
+    output += ' ' + str(value_tz.day)
+    output += ', ' + str(value_tz.year)
 
     return output
 
@@ -100,7 +100,7 @@ def ap_time_filter(value):
     """
     Converts a datetime or string in hh:mm format into AP style.
     """
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         value = datetime.strptime(value, '%I:%M')
     value_tz = _set_timezone(value)
     value_year = value_tz.replace(year=2016)
@@ -111,14 +111,14 @@ def ap_state_filter(usps):
     """
     Convert a USPS state abbreviation into AP style.
     """
-    return USPS_TO_AP_STATE[unicode(usps)]
+    return USPS_TO_AP_STATE[str(usps)]
 
 
 def ap_time_period_filter(value):
     """
     Converts Python's AM/PM into AP Style's a.m./p.m.
     """
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         value = datetime.strptime(value, '%p')
     value_tz = _set_timezone(value)
     value_year = value_tz.replace(year=2016)
