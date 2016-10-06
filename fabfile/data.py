@@ -4,16 +4,22 @@
 Commands that update or process the application data.
 """
 import app_config
+import os
+import shutil
+import simplejson as json 
 
+from datetime import date, datetime
 from oauth import get_document
 from fabric.api import hide, local, task, settings, shell_env
 from fabric.state import env
 from models import models
+from playhouse.shortcuts import model_to_dict
+from pytz import timezone
+from time import time
 
 import copytext
 from . import servers
-
-variable_name = 'test'
+from . import utils
 
 @task
 def bootstrap_db():
@@ -129,3 +135,116 @@ def create_race_meta():
                     poll_closing=row['full_poll_closing_time'],
                     order=row['ordinal']
             )
+
+@task
+def render_presidential_state_results():
+    results = models.Result.select().where(
+        models.Result.level == 'state',
+        models.Result.officename == 'President',
+        (models.Result.last == 'Obama') | (models.Result.last == 'Romney')
+    )
+    json_string = _write_json(results)
+
+    filename = 'presidential-national.json'
+    with open('.rendered/{0}'.format(filename), 'w') as f:
+        f.write(json_string)
+
+@task
+def render_presidential_county_results():
+    states = models.Result.select(models.Result.statepostal).distinct()
+
+    for state in states:
+        results = models.Result.select().where(
+            models.Result.level == 'county',
+            models.Result.officename == 'President',
+            (models.Result.last == 'Obama') | (models.Result.last == 'Romney'),
+            models.Result.statepostal == state
+        )
+        json_string = _write_json(results)
+
+        filename = 'presidential-{0}-counties.json'.format(state.statepostal.lower())
+        with open('.rendered/{0}'.format(filename), 'w') as f:
+            f.write(json_string)
+
+@task
+def render_governor_results():
+    results = models.Result.select().where(
+        models.Result.level == 'state',
+        models.Result.officename == 'Governor'
+    )
+    json_string = _write_json(results)
+
+    filename = 'governor-national.json'
+    with open('.rendered/{0}'.format(filename), 'w') as f:
+        f.write(json_string)
+
+@task
+def render_senate_results():
+    results = models.Result.select().where(
+        models.Result.level == 'state',
+        models.Result.officename == 'U.S. Senate'
+    )
+    json_string = _write_json(results)
+
+    filename = 'senate-national.json'
+    with open('.rendered/{0}'.format(filename), 'w') as f:
+        f.write(json_string)
+
+def _write_json(results):
+    serialized_results = []
+
+    for result in results:
+        obj = model_to_dict(result)
+        serialized_results.append(obj)
+
+    return json.dumps(serialized_results, use_decimal=True, cls=utils.APDatetimeEncoder)
+
+@task
+def render_state_results():
+    states = models.Result.select(models.Result.statepostal).distinct()
+
+    for state in states:
+        presidential = models.Result.select().where(
+            models.Result.level == 'state',
+            models.Result.officename == 'President',
+            (models.Result.last == 'Obama') | (models.Result.last == 'Romney'),
+            models.Result.statepostal == state.statepostal
+        )
+        senate = models.Result.select().where(
+            models.Result.level == 'state',
+            models.Result.officename == 'U.S. Senate',
+            models.Result.statepostal == state.statepostal
+        )
+        house = models.Result.select().where(
+            models.Result.level == 'state',
+            models.Result.officename == 'U.S. House',
+            models.Result.statepostal == state.statepostal
+        )
+        governor = models.Result.select().where(
+            models.Result.level == 'state',
+            models.Result.officename == 'Governor',
+            models.Result.statepostal == state.statepostal
+        )
+
+        # TODO: ballot initiatives
+
+        state_results = {}
+        state_results['presidential'] = [model_to_dict(result) for result in presidential]
+        state_results['senate'] = [model_to_dict(result) for result in senate]
+        state_results['house'] = [model_to_dict(result) for result in house]
+        state_results['governor'] = [model_to_dict(result) for result in governor]
+
+        filename = '{0}.json'.format(state.statepostal.lower())
+        with open('.rendered/{0}'.format(filename), 'w') as f:
+            json.dump(state_results, f, use_decimal=True, cls=utils.APDatetimeEncoder)
+
+@task
+def render_all():
+    shutil.rmtree('.rendered')
+    os.makedirs('.rendered')
+
+    render_presidential_state_results()
+    render_presidential_county_results()
+    render_senate_results()
+    render_governor_results()
+    render_state_results()
