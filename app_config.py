@@ -56,7 +56,7 @@ STAGING_SERVERS = ['cron-staging.nprapps.org']
 DEPLOY_TO_SERVERS = False
 
 SERVER_USER = 'ubuntu'
-SERVER_PYTHON = 'python2.7'
+SERVER_PYTHON = 'python3'
 SERVER_PROJECT_PATH = '/home/%s/apps/%s' % (SERVER_USER, PROJECT_FILENAME)
 SERVER_REPOSITORY_PATH = '%s/repository' % SERVER_PROJECT_PATH
 SERVER_VIRTUALENV_PATH = '%s/virtualenv' % SERVER_PROJECT_PATH
