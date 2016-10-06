@@ -22,14 +22,14 @@ from . import utils
 from . import spreadsheet
 
 if app_config.DEPLOY_TO_SERVERS:
-    import servers
+    from . import servers
 
 if app_config.DEPLOY_CRONTAB:
-    import cron_jobs
+    from . import cron_jobs
 
 # Bootstrap can only be run once, then it's disabled
 if app_config.PROJECT_SLUG == '$NEW_PROJECT_SLUG':
-    import bootstrap
+    from . import bootstrap
 
 """
 Base configuration
