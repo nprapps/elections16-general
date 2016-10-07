@@ -31,10 +31,8 @@ def main(run_once=False):
     """
     results_start = 0
     mode = 'fast'
-    print('call top of function')
 
     while True:
-        print(mode)
         now = time()
 
         if app_config.LOAD_RESULTS_INTERVAL and (now - results_start) > app_config.LOAD_RESULTS_INTERVAL:
