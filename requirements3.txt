@@ -1,6 +1,7 @@
 Authomatic==0.1.0.post1
 Fabric3==1.12.0.post1
 Flask==0.11
+Flask-Admin==1.4.2
 Jinja2==2.7.3
 MarkupSafe==0.23
 PyYAML==3.11
