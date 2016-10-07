@@ -193,7 +193,7 @@ def render_confs():
 
         with open(template_path,  'r') as read_template:
 
-            with open(rendered_path, 'wb') as write_template:
+            with open(rendered_path, 'w') as write_template:
                 payload = Template(read_template.read())
                 write_template.write(payload.render(**context))
 
