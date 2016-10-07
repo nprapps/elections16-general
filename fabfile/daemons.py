@@ -42,12 +42,12 @@ def main(run_once=False):
             if mode == 'fast':
                 logger.info('loading all national results')
                 execute('data.load_results', app_config.FAST_ELEX_FLAGS)
-                execute('data.render_all_national')
+                execute('deploy_national_data')
             
             if mode == 'slow':
                 logger.info('loading all presidential results')
                 execute('data.load_results', app_config.SLOW_ELEX_FLAGS)
-                execute('data.render_presidential_files')
+                execute('deploy_presidential_data')
 
             if mode == 'fast':
                 mode = 'slow'

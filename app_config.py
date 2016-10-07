@@ -144,6 +144,7 @@ SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
 ELEX_DELEGATE_FLAGS = ''
 
 LOAD_RESULTS_INTERVAL = 10
+DATA_OUTPUT_FOLDER = '.rendered'
 """
 Utilities
 """

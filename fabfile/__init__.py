@@ -197,6 +197,25 @@ def deploy(remote='origin', reload=False):
         reset_browsers()
 
 @task
+def deploy_national_data():
+    local('rm -rf {0}'.format(app_config.DATA_OUTPUT_FOLDER))
+    local('mkdir {0}'.format(app_config.DATA_OUTPUT_FOLDER))
+
+    data.render_all_national()
+
+    local('aws s3 sync {0} s3://{1}/{2}/data/'.format(app_config.DATA_OUTPUT_FOLDER, app_config.S3_BUCKET, app_config.PROJECT_SLUG))
+
+
+@task
+def deploy_presidential_data():
+    local('rm -rf {0}'.format(app_config.DATA_OUTPUT_FOLDER))
+    local('mkdir {0}'.format(app_config.DATA_OUTPUT_FOLDER))
+
+    data.render_presidential_files()
+
+    local('aws s3 sync {0} s3://{1}/{2}/data/'.format(app_config.DATA_OUTPUT_FOLDER, app_config.S3_BUCKET, app_config.PROJECT_SLUG))
+
+@task
 def check_timestamp():
     require('settings', provided_by=[production, staging])
 
