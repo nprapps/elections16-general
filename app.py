@@ -46,7 +46,7 @@ SLUG_TO_OFFICENAME = {
 }
 
 # Example application views
-@app.route('/%s/calls/<office>' % app_config.PROJECT_SLUG, methods=['GET'])
+@app.route('/%s/calls/<office>/' % app_config.PROJECT_SLUG, methods=['GET'])
 def calls_admin(office):
     officename = SLUG_TO_OFFICENAME[office]
     results = app_utils.filter_results(officename)
@@ -59,8 +59,8 @@ def calls_admin(office):
 
     return make_response(render_template('calls.html', **context))
 
-@app.route('/%s/calls/call-npr' % app_config.PROJECT_SLUG, methods=['POST'])
-def call_npr():
+@app.route('/%s/calls/<office>/call-npr' % app_config.PROJECT_SLUG, methods=['POST'])
+def call_npr(office):
     from flask import request
 
     result_id = request.form.get('result_id')
@@ -75,9 +75,14 @@ def call_npr():
     call.save()
 
     race_id = result.raceid
+    statepostal = result.statepostal
+    officename = result.officename
+
     race_results = models.Result.select().where(
         models.Result.level == 'state',
-        models.Result.raceid == race_id
+        models.Result.raceid == race_id,
+        models.Result.officename == officename,
+        models.Result.statepostal == statepostal
     )
 
     for race_result in race_results:
@@ -92,16 +97,20 @@ def call_npr():
 
     return 'Success', 200
 
-@app.route('/%s/calls/accept-ap' % app_config.PROJECT_SLUG, methods=['POST'])
-def accept_ap():
+@app.route('/%s/calls/<office>/accept-ap' % app_config.PROJECT_SLUG, methods=['POST'])
+def accept_ap(office):
     from flask import request
 
+    officename = SLUG_TO_OFFICENAME[office]
+
     race_id = request.form.get('race_id')
+    statepostal = request.form.get('statepostal')
 
     results = models.Result.select().where(
         models.Result.level == 'state',
         models.Result.raceid == race_id,
-        models.Result.officename == 'President'
+        models.Result.officename == officename,
+        models.Result.statepostal == statepostal
     )
 
     for result in results:

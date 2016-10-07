@@ -45,11 +45,11 @@
                         <div class="ap-btns">
                             <button
                                 class="btn btn-success btn-mini ap accept-ap {% if not results[0].call[0].accept_ap %} hidden {% endif %}"
-                                data-race-id="{{ results[0].raceid }}">
+                                data-race-id="{{ results[0].raceid }}" data-statepostal="{{ results[0].statepostal }}">
                                 Accepting AP calls
                             </button>
 
-                            <button class="btn btn-warning btn-mini ap reject-ap {% if  results[0].call[0].accept_ap %} hidden {% endif %}" data-race-id="{{ results[0].raceid }}">
+                            <button class="btn btn-warning btn-mini ap reject-ap {% if  results[0].call[0].accept_ap %} hidden {% endif %}" data-race-id="{{ results[0].raceid }}" data-statepostal="{{ results[0].statepostal }}">
                                 Not accepting AP Calls
                             </button>
                         </div>
@@ -136,6 +136,9 @@
     </div>
 
     <div class="overlay"></div>
+
+    <script src="/elections16/js/lib/jquery.js"></script>
+    <script src="/elections16/js/calls.js"></script>
 </body>
 
 </html>
