@@ -53,7 +53,7 @@ def create_db():
             print('creating db')
             local('createdb %s' % app_config.database['PGDATABASE'])
 
-        if env.get('settings'):
+        # if env.get('settings'):
             # servers.start_service('uwsgi')
             # servers.start_service('deploy')
 
