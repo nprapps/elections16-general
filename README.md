@@ -88,10 +88,6 @@ You will also need Python 3:
 brew install python3
 ```
 
-```
-brew install node
-```
-
 Then bootstrap the project:
 
 ```
