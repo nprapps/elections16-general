@@ -54,8 +54,8 @@ def create_db():
             local('createdb %s' % app_config.database['PGDATABASE'])
 
         if env.get('settings'):
-            servers.start_service('uwsgi')
-            servers.start_service('deploy')
+            # servers.start_service('uwsgi')
+            # servers.start_service('deploy')
 
 @task
 def create_tables():
