@@ -90,6 +90,7 @@ def load_results(flags):
             delete_results()
             with hide('output', 'running'):
                 local('cat .data/results.csv | psql {0} -c "COPY result FROM stdin DELIMITER \',\' CSV HEADER;"'.format(app_config.database['PGDATABASE']))
+            print('results loaded')
         else:
             print("ERROR GETTING RESULTS")
             print(cmd_output.stderr)
@@ -99,6 +100,7 @@ def create_calls():
     """
     Create database of race calls for all races in results data.
     """
+    print('creating calls')
     models.Call.delete().execute()
 
     results = models.Result.select().where(
