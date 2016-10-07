@@ -68,14 +68,15 @@ def delete_results():
         local('psql {0} -c "set session_replication_role = replica; DELETE FROM result; set session_replication_role = default;"'.format(app_config.database['PGDATABASE']))
 
 @task
-def load_results():
+def load_results(flags):
     """
     Load AP results. Defaults to next election, or specify a date as a parameter.
     """
     election_date = app_config.NEXT_ELECTION_DATE
     with hide('output', 'running'):
         local('mkdir -p .data')
-    cmd = 'elex results {0} {1} > .data/results.csv'.format(election_date, app_config.ELEX_FLAGS)
+
+    cmd = 'elex results {0} {1} > .data/results.csv'.format(election_date, flags)
     with shell_env(**app_config.database):
         with settings(warn_only=True), hide('output', 'running'):
             cmd_output = local(cmd, capture=True)
@@ -189,7 +190,7 @@ def _write_json(results):
     serialized_results = []
 
     for result in results:
-        obj = model_to_dict(result)
+        obj = model_to_dict(result, backrefs=True)
         serialized_results.append(obj)
 
     return json.dumps(serialized_results, use_decimal=True, cls=utils.APDatetimeEncoder)
@@ -228,10 +229,10 @@ def render_state_results():
         # TODO: ballot initiatives
 
         state_results = {}
-        state_results['presidential'] = [model_to_dict(result) for result in presidential]
-        state_results['senate'] = [model_to_dict(result) for result in senate]
-        state_results['house'] = [model_to_dict(result) for result in house]
-        state_results['governor'] = [model_to_dict(result) for result in governor]
+        state_results['presidential'] = [model_to_dict(result, backrefs=True) for result in presidential]
+        state_results['senate'] = [model_to_dict(result, backrefs=True) for result in senate]
+        state_results['house'] = [model_to_dict(result, backrefs=True) for result in house]
+        state_results['governor'] = [model_to_dict(result, backrefs=True) for result in governor]
 
         filename = '{0}.json'.format(state.statepostal.lower())
         with open('.rendered/{0}'.format(filename), 'w') as f:
@@ -247,3 +248,16 @@ def render_all():
     render_senate_results()
     render_governor_results()
     render_state_results()
+
+@task
+def render_all_national():
+    render_presidential_state_results()
+    render_senate_results()
+    render_governor_results()
+    # render_house_results()
+    render_state_results()
+
+@task
+def render_presidential_files():
+    render_presidential_state_results()
+    render_presidential_county_results()

@@ -13,6 +13,7 @@ import app_config
 
 # Other fabfiles
 from . import assets
+from . import daemons
 from . import data
 from . import flat
 from . import issues
@@ -194,7 +195,6 @@ def deploy(remote='origin', reload=False):
 
     if not check_timestamp():
         reset_browsers()
-
 
 @task
 def check_timestamp():

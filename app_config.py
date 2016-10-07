@@ -139,8 +139,11 @@ Logging
 LOG_FORMAT = '%(levelname)s:%(name)s:%(asctime)s: %(message)s'
 
 NEXT_ELECTION_DATE = '2012-11-06'
-ELEX_FLAGS = '--national-only'
+FAST_ELEX_FLAGS = '--national-only --results-level state'
+SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
 ELEX_DELEGATE_FLAGS = ''
+
+LOAD_RESULTS_INTERVAL = 10
 """
 Utilities
 """
