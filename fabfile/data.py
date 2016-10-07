@@ -28,7 +28,7 @@ def bootstrap_db():
     """
     create_db()
     create_tables()
-    load_results()
+    load_results(app_config.FAST_ELEX_FLAGS)
     create_calls()
     # create_race_meta()
 
