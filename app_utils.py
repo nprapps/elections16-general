@@ -3,21 +3,27 @@ from decimal import Decimal, ROUND_DOWN
 from models import models
 from peewee import fn
 
-def filter_results():
+def filter_results(name):
     results = models.Result.select().where(
-        (models.Result.level == 'state') | (models.Result.level == None),
-        models.Result.officename == 'President'
-    ).order_by(models.Result.statepostal, models.Result.party, -models.Result.votecount, models.Result.last)
+        models.Result.level == 'state',
+        models.Result.officename == name
+    ).order_by(models.Result.statepostal, models.Result.seatname, -models.Result.votecount, models.Result.last)
 
     return results
 
-def group_results_by_race(results):
+def group_results_by_race(results, name):
     grouped = OrderedDict()
     for result in results:
-        if result.raceid not in grouped:
-            grouped[result.raceid] = []
+        if name == 'President':
+            if result.statepostal not in grouped:
+                grouped[result.statepostal] = []
 
-        grouped[result.raceid].append(result)
+            grouped[result.statepostal].append(result)
+        else:
+            if result.raceid not in grouped:
+                grouped[result.raceid] = []
+
+            grouped[result.raceid].append(result)
 
     return grouped
 

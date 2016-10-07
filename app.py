@@ -38,11 +38,19 @@ admin = Admin(app, url='/%s/admin' % app_config.PROJECT_SLUG)
 admin.add_view(ModelView(models.Result))
 admin.add_view(ModelView(models.Call))
 
+SLUG_TO_OFFICENAME = {
+    'senate': 'U.S. Senate',
+    'house': 'U.S. House',
+    'president': 'President',
+    'governor': 'Governor'
+}
+
 # Example application views
-@app.route('/%s/calls/' % app_config.PROJECT_SLUG, methods=['GET'])
-def calls_admin():
-    results = app_utils.filter_results()
-    grouped = app_utils.group_results_by_race(results)
+@app.route('/%s/calls/<office>' % app_config.PROJECT_SLUG, methods=['GET'])
+def calls_admin(office):
+    officename = SLUG_TO_OFFICENAME[office]
+    results = app_utils.filter_results(officename)
+    grouped = app_utils.group_results_by_race(results, officename)
 
     context = make_context(asset_depth=1)
     context.update({

@@ -6,7 +6,7 @@ Commands that update or process the application data.
 import app_config
 import os
 import shutil
-import simplejson as json 
+import simplejson as json
 
 from datetime import date, datetime
 from oauth import get_document
@@ -96,8 +96,7 @@ def create_calls():
     models.Call.delete().execute()
 
     results = models.Result.select().where(
-        models.Result.level == 'state',
-        models.Result.officename == 'President'
+        models.Result.level == 'state'
     )
 
     for result in results:
@@ -195,7 +194,7 @@ def _write_json(results):
 
     return json.dumps(serialized_results, use_decimal=True, cls=utils.APDatetimeEncoder)
 
-def _write_json_file(json_string, filename): 
+def _write_json_file(json_string, filename):
     with open('.rendered/{0}'.format(filename), 'w') as f:
         f.write(json_string)
 
