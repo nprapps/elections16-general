@@ -28,7 +28,7 @@ def bootstrap_db():
     """
     create_db()
     create_tables()
-    load_results(app_config.FAST_ELEX_FLAGS)
+    load_results(app_config.SLOW_ELEX_FLAGS)
     create_calls()
     # create_race_meta()
 
@@ -160,12 +160,14 @@ def render_presidential_county_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
     for state in states:
+        print(state.statepostal)
         results = models.Result.select().where(
-            models.Result.level == 'county',
+            (models.Result.level == 'county') | (models.Result.level == 'township'),
             models.Result.officename == 'President',
             (models.Result.last == 'Obama') | (models.Result.last == 'Romney'),
-            models.Result.statepostal == state
+            models.Result.statepostal == state.statepostal
         )
+
         json_string = _write_json(results)
 
         filename = 'presidential-{0}-counties.json'.format(state.statepostal.lower())
