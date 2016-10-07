@@ -33,7 +33,7 @@ elections16-general
 What is this?
 -------------
 
-**TKTK: Describe elections16-general here.**
+The backend for NPR's 2016 general election results coverage.
 
 Assumptions
 -----------
@@ -41,7 +41,7 @@ Assumptions
 The following things are assumed to be true in this documentation.
 
 * You are running OSX.
-* You are using Python 2.7. (Probably the version that came OSX.)
+* You are using **Python 3**.
 * You have [virtualenv](https://pypi.python.org/pypi/virtualenv) and [virtualenvwrapper](https://pypi.python.org/pypi/virtualenvwrapper) installed and working.
 * You have NPR's AWS credentials stored as environment variables locally.
 
@@ -80,17 +80,25 @@ Node.js is required for the static asset pipeline. If you don't already have it,
 
 ```
 brew install node
-curl https://npmjs.org/install.sh | sh
+```
+
+You will also need Python 3:
+
+```
+brew install python3
+```
+
+```
+brew install node
 ```
 
 Then bootstrap the project:
 
 ```
 cd elections16-general
-mkvirtualenv elections16-general
+mkvirtualenv -p `which python3` elections16-general
 pip install -r requirements.txt
 npm install
-fab update
 ```
 
 **Problems installing requirements?** You may need to run the pip command as ``ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future pip install -r requirements.txt`` to work around an issue with OSX.
