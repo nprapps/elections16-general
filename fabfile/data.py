@@ -150,17 +150,22 @@ def render_presidential_state_results():
         models.Result.officename == 'President',
         (models.Result.last == 'Obama') | (models.Result.last == 'Romney')
     )
-    json_string = _write_json(results)
+    serialized_results = {}
 
-    filename = 'presidential-national.json'
-    _write_json_file(json_string, filename)
+    for result in results:
+        if not serialized_results.get(result.statepostal):
+            serialized_results[result.statepostal] = []
+
+        obj = model_to_dict(result, backrefs=True)
+        serialized_results[result.statepostal].append(obj)
+
+    _write_json_file(serialized_results, 'presidential-national.json')
 
 @task
 def render_presidential_county_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
     for state in states:
-        print(state.statepostal)
         results = models.Result.select().where(
             (models.Result.level == 'county') | (models.Result.level == 'township'),
             models.Result.officename == 'President',
@@ -168,10 +173,17 @@ def render_presidential_county_results():
             models.Result.statepostal == state.statepostal
         )
 
-        json_string = _write_json(results)
+        serialized_results = {}
+
+        for result in results:
+            if not serialized_results.get(result.fipscode):
+                serialized_results[result.fipscode] = []
+
+            obj = model_to_dict(result, backrefs=True)
+            serialized_results[result.fipscode].append(obj)
 
         filename = 'presidential-{0}-counties.json'.format(state.statepostal.lower())
-        _write_json_file(json_string, filename)
+        _write_json_file(serialized_results, filename)
 
 @task
 def render_governor_results():
@@ -179,10 +191,17 @@ def render_governor_results():
         models.Result.level == 'state',
         models.Result.officename == 'Governor'
     )
-    json_string = _write_json(results)
 
-    filename = 'governor-national.json'
-    _write_json_file(json_string, filename)
+    serialized_results = {}
+
+    for result in results:
+        if not serialized_results.get(result.statepostal):
+            serialized_results[result.statepostal] = []
+
+        obj = model_to_dict(result, backrefs=True)
+        serialized_results[result.statepostal].append(obj)
+
+    _write_json_file(serialized_results, 'governor-national.json')
 
 @task
 def render_senate_results():
@@ -190,23 +209,20 @@ def render_senate_results():
         models.Result.level == 'state',
         models.Result.officename == 'U.S. Senate'
     )
-    json_string = _write_json(results)
-
-    filename = 'senate-national.json'
-    _write_json_file(json_string, filename)
-
-def _write_json(results):
-    serialized_results = []
+    serialized_results = {}
 
     for result in results:
+        if not serialized_results.get(result.statepostal):
+            serialized_results[result.statepostal] = []
+
         obj = model_to_dict(result, backrefs=True)
-        serialized_results.append(obj)
+        serialized_results[result.statepostal].append(obj)
 
-    return json.dumps(serialized_results, use_decimal=True, cls=utils.APDatetimeEncoder)
+    _write_json_file(serialized_results, 'senate-national.json')
 
-def _write_json_file(json_string, filename):
+def _write_json_file(serialized_results, filename):
     with open('.rendered/{0}'.format(filename), 'w') as f:
-        f.write(json_string)
+        json.dump(serialized_results, f, use_decimal=True, cls=utils.APDatetimeEncoder)
 
 @task
 def render_state_results():
