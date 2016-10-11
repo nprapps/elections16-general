@@ -77,7 +77,7 @@ UWSGI_SOCKET_PATH = '/tmp/%s.uwsgi.sock' % PROJECT_FILENAME
 SERVER_SERVICES = [
     ('app', SERVER_REPOSITORY_PATH, 'ini'),
     ('uwsgi', '/etc/init', 'conf'),
-    ('nginx', '/etc/nginx/locations-enabled', 'conf'),
+    ('nginx', '/etc/nginx/sites-enabled', 'conf'),
     ('deploy', '/etc/init', 'conf')
 ]
 
