@@ -10,7 +10,7 @@ import simplejson as json
 
 from datetime import date, datetime
 from oauth import get_document
-from fabric.api import hide, local, task, settings, shell_env
+from fabric.api import execute, hide, local, task, settings, shell_env
 from fabric.state import env
 from models import models
 from playhouse.shortcuts import model_to_dict
@@ -18,7 +18,6 @@ from pytz import timezone
 from time import time
 
 import copytext
-from . import servers
 from . import utils
 
 @task
@@ -36,30 +35,25 @@ def bootstrap_db():
 def create_db():
     with settings(warn_only=True), hide('output', 'running'):
         if env.get('settings'):
-            servers.stop_service('uwsgi')
-            servers.stop_service('deploy')
+            execute('servers.stop_service', 'uwsgi')
+            execute('servers.stop_service', 'deploy')
 
         with shell_env(**app_config.database):
-            print('dropping db')
             local('dropdb --if-exists %s' % app_config.database['PGDATABASE'])
 
         if not env.get('settings'):
-            print('dropping user')
             local('psql -c "DROP USER IF EXISTS %s;"' % app_config.database['PGUSER'])
-            print('creating user')
             local('psql -c "CREATE USER %s WITH SUPERUSER PASSWORD \'%s\';"' % (app_config.database['PGUSER'], app_config.database['PGPASSWORD']))
 
         with shell_env(**app_config.database):
-            print('creating db')
             local('createdb %s' % app_config.database['PGDATABASE'])
 
-        # if env.get('settings'):
-            # servers.start_service('uwsgi')
-            # servers.start_service('deploy')
+        if env.get('settings'):
+            execute('servers.start_service', 'uwsgi')
+            execute('servers.start_service', 'deploy')
 
 @task
 def create_tables():
-    print('creating tables')
     models.Result.create_table()
     models.Call.create_table()
     models.RaceMeta.create_table()
@@ -90,7 +84,6 @@ def load_results(flags):
             delete_results()
             with hide('output', 'running'):
                 local('cat .data/results.csv | psql {0} -c "COPY result FROM stdin DELIMITER \',\' CSV HEADER;"'.format(app_config.database['PGDATABASE']))
-            print('results loaded')
         else:
             print("ERROR GETTING RESULTS")
             print(cmd_output.stderr)
@@ -100,7 +93,6 @@ def create_calls():
     """
     Create database of race calls for all races in results data.
     """
-    print('creating calls')
     models.Call.delete().execute()
 
     results = models.Result.select().where(
