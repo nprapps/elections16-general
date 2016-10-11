@@ -137,6 +137,8 @@ def create_race_meta():
 
 @task
 def render_presidential_state_results():
+    selections = ['call', 'electtotal', 'electwon', 'first', 'last', 'lastupdated', 'meta', 'party', 'precinctsreporting', 'precinctsreportingpct', 'precinctstotal', 'statename', 'statepostal', 'votepct', 'winner']
+
     results = models.Result.select().where(
         models.Result.level == 'state',
         models.Result.officename == 'President',
@@ -149,7 +151,12 @@ def render_presidential_state_results():
             serialized_results[result.statepostal] = []
 
         obj = model_to_dict(result, backrefs=True)
-        serialized_results[result.statepostal].append(obj)
+        final_obj = {}
+        for key in obj.keys():
+            if key in selections:
+                final_obj[key] = obj[key]
+
+        serialized_results[result.statepostal].append(final_obj)
 
     _write_json_file(serialized_results, 'presidential-national.json')
 
