@@ -187,6 +187,7 @@ def render_all():
     render_senate_results()
     render_governor_results()
     render_ballot_measure_results()
+    render_house_results()
     render_state_results()
 
 @task
@@ -195,7 +196,7 @@ def render_all_national():
     render_senate_results()
     render_governor_results()
     render_ballot_measure_results()
-    # render_house_results()
+    render_house_results()
     render_state_results()
 
 @task
