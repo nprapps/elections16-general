@@ -228,6 +228,24 @@ def _write_json_file(serialized_results, filename):
         json.dump(serialized_results, f, use_decimal=True, cls=utils.APDatetimeEncoder)
 
 @task
+def render_ballot_measure_results():
+    results = models.Result.select().where(
+        models.Result.level == 'state',
+        models.Result.is_ballot_measure == True
+    )
+
+    serialized_results = {}
+
+    for result in results:
+        if not serialized_results.get(result.statepostal):
+            serialized_results[result.statepostal] = []
+
+        obj = model_to_dict(result, backrefs=True)
+        serialized_results[result.statepostal].append(obj)
+
+    _write_json_file(serialized_results, 'ballot-measures-national.json')
+
+@task
 def render_state_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
@@ -253,6 +271,11 @@ def render_state_results():
             models.Result.officename == 'Governor',
             models.Result.statepostal == state.statepostal
         )
+        ballot_measures = models.Result.select().where(
+            models.Result.level == 'state',
+            models.Result.is_ballot_measure == True,
+            models.Result.statepostal == state.statepostal
+        )
 
         # TODO: ballot initiatives
 
@@ -261,6 +284,7 @@ def render_state_results():
         state_results['senate'] = [model_to_dict(result, backrefs=True) for result in senate]
         state_results['house'] = [model_to_dict(result, backrefs=True) for result in house]
         state_results['governor'] = [model_to_dict(result, backrefs=True) for result in governor]
+        state_results['ballot_measures'] = [model_to_dict(result, backrefs=True) for result in ballot_measures]
 
         filename = '{0}.json'.format(state.statepostal.lower())
         with open('.rendered/{0}'.format(filename), 'w') as f:
@@ -275,6 +299,7 @@ def render_all():
     render_presidential_county_results()
     render_senate_results()
     render_governor_results()
+    render_ballot_measure_results()
     render_state_results()
 
 @task
@@ -282,6 +307,7 @@ def render_all_national():
     render_presidential_state_results()
     render_senate_results()
     render_governor_results()
+    render_ballot_measure_results()
     # render_house_results()
     render_state_results()
 
