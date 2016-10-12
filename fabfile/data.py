@@ -132,9 +132,9 @@ def create_race_meta():
             continue
 
         results = models.Result.select().where(
-                models.Result.level == 'state',
-                models.Result.statename == row['state_name'],
-                models.Result.officename == 'President'
+            models.Result.level == 'state',
+            models.Result.statename == row['state_name'],
+            models.Result.officename == 'President'
         )
 
         for result in results:
@@ -205,6 +205,27 @@ def render_governor_results():
         serialized_results[result.statepostal].append(obj)
 
     _write_json_file(serialized_results, 'governor-national.json')
+
+@task
+def render_house_results():
+    results = models.Result.select().where(
+        models.Result.level == 'state',
+        models.Result.officename == 'U.S. House',
+        models.Result.raceid << app_config.SELECTED_HOUSE_RACES
+    )
+
+    serialized_results = {}
+
+    for result in results:
+        slug = '{0}-{1}'.format(result.statepostal, result.seatnum)
+
+        if not serialized_results.get(result.statepostal):
+            serialized_results[slug] = []
+
+        obj = model_to_dict(result, backrefs=True)
+        serialized_results[slug].append(obj)
+
+    _write_json_file(serialized_results, 'house-national.json')
 
 @task
 def render_senate_results():
