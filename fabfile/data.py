@@ -223,10 +223,6 @@ def render_senate_results():
 
     _write_json_file(serialized_results, 'senate-national.json')
 
-def _write_json_file(serialized_results, filename):
-    with open('.rendered/{0}'.format(filename), 'w') as f:
-        json.dump(serialized_results, f, use_decimal=True, cls=utils.APDatetimeEncoder)
-
 @task
 def render_ballot_measure_results():
     results = models.Result.select().where(
@@ -287,8 +283,11 @@ def render_state_results():
         state_results['ballot_measures'] = [model_to_dict(result, backrefs=True) for result in ballot_measures]
 
         filename = '{0}.json'.format(state.statepostal.lower())
-        with open('.rendered/{0}'.format(filename), 'w') as f:
-            json.dump(state_results, f, use_decimal=True, cls=utils.APDatetimeEncoder)
+        _write_json_file(state_results, filename)
+
+def _write_json_file(serialized_results, filename):
+    with open('.rendered/{0}'.format(filename), 'w') as f:
+        json.dump(serialized_results, f, use_decimal=True, cls=utils.APDatetimeEncoder)
 
 @task
 def render_all():
