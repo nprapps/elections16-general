@@ -149,7 +149,7 @@ def create_race_meta():
 @task
 def render_presidential_state_results():
     results = models.Result.select().where(
-        models.Result.level == 'state',
+        (models.Result.level == 'state') | (models.Result.level == 'national') | (models.Result.level == 'district'),
         models.Result.officename == 'President',
         (models.Result.last == 'Obama') | (models.Result.last == 'Romney')
     )
@@ -170,7 +170,7 @@ def render_presidential_county_results():
 
     for state in states:
         results = models.Result.select().where(
-            (models.Result.level == 'county') | (models.Result.level == 'township'),
+            (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district'),
             models.Result.officename == 'President',
             (models.Result.last == 'Obama') | (models.Result.last == 'Romney'),
             models.Result.statepostal == state.statepostal
