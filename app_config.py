@@ -139,10 +139,10 @@ Logging
 """
 LOG_FORMAT = '%(levelname)s:%(name)s:%(asctime)s: %(message)s'
 
-NEXT_ELECTION_DATE = '2012-11-06'
-FAST_ELEX_FLAGS = '--national-only --results-level state'
-SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
-ELEX_DISTRICTS_FLAGS = '--results-level district --raceids 0'
+NEXT_ELECTION_DATE = '2016-11-08'
+FAST_ELEX_FLAGS = '-t --national-only --results-level state'
+SLOW_ELEX_FLAGS = '-t --national-only --results-level ru --raceids 0'
+ELEX_DISTRICTS_FLAGS = '-t --results-level district --raceids 0'
 
 LOAD_RESULTS_INTERVAL = 10
 DATA_OUTPUT_FOLDER = '.rendered'
