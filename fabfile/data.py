@@ -75,18 +75,29 @@ def load_results(flags):
     with hide('output', 'running'):
         local('mkdir -p .data')
 
-    cmd = 'elex results {0} {1} > .data/results.csv'.format(election_date, flags)
-    with shell_env(**app_config.database):
-        with settings(warn_only=True), hide('output', 'running'):
-            cmd_output = local(cmd, capture=True)
+    cmd = 'elex results {0} {1} > .data/first_query.csv'.format(election_date, flags)
+    districts_cmd = 'elex results {0} {1} | csvgrep -c level -m district > .data/districts.csv'.format(election_date, app_config.ELEX_DISTRICTS_FLAGS)
 
-        if cmd_output.succeeded:
-            delete_results()
-            with hide('output', 'running'):
-                local('cat .data/results.csv | psql {0} -c "COPY result FROM stdin DELIMITER \',\' CSV HEADER;"'.format(app_config.database['PGDATABASE']))
+
+    with shell_env(**app_config.database):
+        first_cmd_output = local(cmd, capture=True)
+
+        if first_cmd_output.succeeded:
+            district_cmd_output = local(districts_cmd, capture=True)
+
+            if district_cmd_output.succeeded:
+                delete_results()
+                with hide('output', 'running'):
+                    local('csvstack .data/first_query.csv .data/districts.csv | psql {0} -c "COPY result FROM stdin DELIMITER \',\' CSV HEADER;"'.format(app_config.database['PGDATABASE']))
+
+            else:
+                print("ERROR GETTING DISTRICT RESULTS")
+                print(cmd_output.stderr)
+
         else:
-            print("ERROR GETTING RESULTS")
+            print("ERROR GETTING MAIN RESULTS")
             print(cmd_output.stderr)
+        
 
 @task
 def create_calls():
@@ -278,3 +289,8 @@ def render_all_national():
 def render_presidential_files():
     render_presidential_state_results()
     render_presidential_county_results()
+
+@task
+def copy_data_for_graphics():
+    render_all()
+    local('cp -r .rendered/* ../elections16graphics/www/data/')
