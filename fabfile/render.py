@@ -1,3 +1,4 @@
+import app_config
 import os
 import shutil
 import simplejson as json
@@ -174,13 +175,13 @@ def render_state_results():
         _write_json_file(state_results, filename)
 
 def _write_json_file(serialized_results, filename):
-    with open('.rendered/{0}'.format(filename), 'w') as f:
+    with open('{0}/{1}'.format(app_config.DATA_OUTPUT_FOLDER, filename), 'w') as f:
         json.dump(serialized_results, f, use_decimal=True, cls=utils.APDatetimeEncoder)
 
 @task
 def render_all():
-    shutil.rmtree('.rendered')
-    os.makedirs('.rendered')
+    shutil.rmtree('{0}'.format(app_config.DATA_OUTPUT_FOLDER))
+    os.makedirs('{0}'.format(app_config.DATA_OUTPUT_FOLDER))
 
     render_presidential_state_results()
     render_presidential_county_results()
