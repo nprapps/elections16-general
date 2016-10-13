@@ -33,7 +33,12 @@ COMMON_SELECTIONS = [
     models.Result.winner
 ]
 
+PRESIDENTIAL_STATE_SELECTIONS = COMMON_SELECTIONS + [
+    models.Result.reportingunitname
+]
+
 PRESIDENTIAL_COUNTY_SELECTIONS = COMMON_SELECTIONS + [
+    models.Result.reportingunitname,
     models.Result.fipscode
 ]
 
@@ -73,7 +78,7 @@ ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Johnson', 'Obama', 'Romney', 'Stein']
 
 @task
 def render_presidential_state_results():
-    results = models.Result.select(*COMMON_SELECTIONS).where(
+    results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
         (models.Result.level == 'state') | (models.Result.level == 'national') | (models.Result.level == 'district'),
         models.Result.officename == 'President',
         models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
@@ -99,10 +104,10 @@ def render_presidential_state_results():
 
 @task
 def render_presidential_county_results():
-    states = models.Result.select(*PRESIDENTIAL_COUNTY_SELECTIONS).distinct()
+    states = models.Result.select(models.Result.statepostal).distinct()
 
     for state in states:
-        results = models.Result.select(*selections).where(
+        results = models.Result.select(*PRESIDENTIAL_COUNTY_SELECTIONS).where(
             (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district'),
             models.Result.officename == 'President',
             models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
@@ -220,7 +225,7 @@ def render_state_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
     for state in states:
-        presidential = models.Result.select(*COMMON_SELECTIONS).where(
+        presidential = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
             models.Result.level == 'state',
             models.Result.officename == 'President',
             models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
