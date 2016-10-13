@@ -13,13 +13,13 @@ from models import models
 import copytext
 
 @task
-def bootstrap_db():
+def bootstrap_db(flags=app_config.SLOW_ELEX_FLAGS):
     """
     Build the database.
     """
     create_db()
     create_tables()
-    load_results(app_config.SLOW_ELEX_FLAGS)
+    load_results(flags)
     create_calls()
     create_race_meta()
 
