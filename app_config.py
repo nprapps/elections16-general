@@ -96,6 +96,9 @@ COPY EDITING
 COPY_GOOGLE_DOC_KEY = '1pja8aNw24ZGZTrfO8TSQCfN76gQrj6OhEcs07uz0_C0'
 COPY_PATH = 'data/copy.xlsx'
 
+CALENDAR_GOOGLE_DOC_KEY = '1Rs2qSw00DYECHummasktOa6zLfrifusJWh-uP-GFgvc'
+CALENDAR_PATH = 'data/calendar.xlsx'
+
 """
 SHARING
 """
@@ -139,6 +142,10 @@ Logging
 """
 LOG_FORMAT = '%(levelname)s:%(name)s:%(asctime)s: %(message)s'
 
+
+"""
+elex config
+"""
 NEXT_ELECTION_DATE = '2016-11-08'
 FAST_ELEX_FLAGS = '-t --national-only --results-level state'
 SLOW_ELEX_FLAGS = '-t --national-only --results-level ru --raceids 0'
@@ -146,6 +153,9 @@ ELEX_DISTRICTS_FLAGS = '-t --results-level district --raceids 0'
 
 LOAD_RESULTS_INTERVAL = 10
 DATA_OUTPUT_FOLDER = '.rendered'
+
+SELECTED_HOUSE_RACES = [23811, 36603, 2, 31223, 26488, 37855, 5743, 40015, 10013, 24022, 5721, 5692, 24013, 11586, 22952, 28382, 35419, 46374, 24025, 10031, 38531, 15990, 8514, 10009, 45882, 49478, 36025, 26025, 36604, 5711, 31211, 45887, 36590, 5701, 37036, 31208, 36041, 20645, 45874]
+
 """
 Utilities
 """
