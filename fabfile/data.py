@@ -99,7 +99,7 @@ def create_calls():
     models.Call.delete().execute()
 
     results = models.Result.select().where(
-        models.Result.level == 'state'
+        (models.Result.level == 'state') | (models.Result.level == 'national') | (models.Result.level == 'district')
     )
 
     for result in results:
@@ -115,7 +115,7 @@ def create_race_meta():
     for row in calendar_sheet:
 
         results = models.Result.select().where(
-            models.Result.level == 'state',
+            (models.Result.level == 'state') | (models.Result.level == 'district'),
             models.Result.statepostal == row['key'],
         )
 

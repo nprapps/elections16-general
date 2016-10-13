@@ -13,22 +13,63 @@ from time import time
 
 from . import utils
 
+PRESIDENTIAL_SELECTIONS = [
+    models.Result.call,
+    models.Result.electtotal,
+    models.Result.electwon,
+    models.Result.fipscode,
+    models.Result.first,
+    models.Result.id,
+    models.Result.last,
+    models.Result.lastupdated,
+    models.Result.level,
+    models.Result.meta,
+    models.Result.officename,
+    models.Result.party,
+    models.Result.precinctsreporting,
+    models.Result.precinctsreportingpct,
+    models.Result.precinctstotal,
+    models.Result.statename,
+    models.Result.statepostal,
+    models.Result.votepct,
+    models.Result.votecount,
+    models.Result.winner
+]
+
+CALLS_SELECTIONS = [
+    models.Call.accept_ap,
+    models.Call.override_winner
+]
+
+RACE_META_SELECTIONS = [
+    models.RaceMeta.poll_closing,
+    models.RaceMeta.first_results
+]
+
 
 @task
 def render_presidential_state_results():
-    results = models.Result.select().where(
+    results = models.Result.select(*PRESIDENTIAL_SELECTIONS).where(
         (models.Result.level == 'state') | (models.Result.level == 'national') | (models.Result.level == 'district'),
         models.Result.officename == 'President',
         (models.Result.last == 'Obama') | (models.Result.last == 'Romney')
-    )
+    ).dicts()
+    
     serialized_results = {}
 
     for result in results:
-        if not serialized_results.get(result.statepostal):
-            serialized_results[result.statepostal] = []
+        if not serialized_results.get(result['statepostal']):
+            serialized_results[result['statepostal']] = []
 
-        obj = model_to_dict(result, backrefs=True)
-        serialized_results[result.statepostal].append(obj)
+        call = models.Call.get(models.Call.call_id == result['id'])
+        result['call'] = model_to_dict(call, only=CALLS_SELECTIONS)
+
+        # no race meta for national race
+        if result['level'] != 'national':
+            meta = models.RaceMeta.get(models.RaceMeta.result_id == result['id'])
+            result['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
+
+        serialized_results[result['statepostal']].append(result)
 
     _write_json_file(serialized_results, 'presidential-national.json')
 
@@ -37,21 +78,20 @@ def render_presidential_county_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
     for state in states:
-        results = models.Result.select().where(
+        results = models.Result.select(*PRESIDENTIAL_SELECTIONS).where(
             (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district'),
             models.Result.officename == 'President',
             (models.Result.last == 'Obama') | (models.Result.last == 'Romney'),
             models.Result.statepostal == state.statepostal
-        )
+        ).dicts()
 
         serialized_results = {}
 
         for result in results:
-            if not serialized_results.get(result.fipscode):
-                serialized_results[result.fipscode] = []
+            if not serialized_results.get(result['fipscode']):
+                serialized_results[result['fipscode']] = []
 
-            obj = model_to_dict(result, backrefs=True)
-            serialized_results[result.fipscode].append(obj)
+            serialized_results[result['fipscode']].append(result)
 
         filename = 'presidential-{0}-counties.json'.format(state.statepostal.lower())
         _write_json_file(serialized_results, filename)
