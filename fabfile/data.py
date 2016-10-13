@@ -21,7 +21,7 @@ def bootstrap_db():
     create_tables()
     load_results(app_config.SLOW_ELEX_FLAGS)
     create_calls()
-    # create_race_meta()
+    create_race_meta()
 
 @task
 def create_db():
@@ -109,33 +109,21 @@ def create_calls():
 def create_race_meta():
     models.RaceMeta.delete().execute()
 
-    results = models.Result.select().where(
-        models.Result.level == 'state',
-        models.Result.officename == 'President'
-    )
-
     calendar = copytext.Copy(app_config.CALENDAR_PATH)
-    calendar_sheet = calendar['data']
+    calendar_sheet = calendar['polls']
 
-    for row in calendar_sheet._serialize():
-        if not row.get('full_poll_closing_time'):
-            continue
-        if row.get('status') == 'past':
-            continue
+    for row in calendar_sheet:
 
         results = models.Result.select().where(
             models.Result.level == 'state',
-            models.Result.statename == row['state_name'],
-            models.Result.officename == 'President'
+            models.Result.statepostal == row['key'],
         )
 
         for result in results:
-            race_type = row['type'].lower()
             models.RaceMeta.create(
-                    result_id=result.id,
-                    race_type=race_type,
-                    poll_closing=row['full_poll_closing_time'],
-                    order=row['ordinal']
+                result_id=result.id,
+                poll_closing=row['time_est'],
+                first_results=row['first_results_est']
             )
 
 @task

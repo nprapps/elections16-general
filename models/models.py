@@ -73,5 +73,4 @@ class Call(BaseModel):
 class RaceMeta(BaseModel):
     result_id = ForeignKeyField(Result, related_name='meta')
     poll_closing = CharField(null=True)
-    race_type = CharField(null=True)
-    order = IntegerField(null=True)
+    first_results = CharField(null=True)

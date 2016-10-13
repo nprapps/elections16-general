@@ -16,6 +16,7 @@ from . import daemons
 from . import data
 from . import issues
 from . import render
+from . import text
 from . import utils
 
 if app_config.DEPLOY_TO_SERVERS:

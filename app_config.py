@@ -96,6 +96,9 @@ COPY EDITING
 COPY_GOOGLE_DOC_KEY = '1pja8aNw24ZGZTrfO8TSQCfN76gQrj6OhEcs07uz0_C0'
 COPY_PATH = 'data/copy.xlsx'
 
+CALENDAR_GOOGLE_DOC_KEY = '1Rs2qSw00DYECHummasktOa6zLfrifusJWh-uP-GFgvc'
+CALENDAR_PATH = 'data/calendar.xlsx'
+
 """
 SHARING
 """
