@@ -79,7 +79,7 @@ def call_npr(office):
     officename = result.officename
 
     race_results = models.Result.select().where(
-        models.Result.level == 'state',
+        (models.Result.level == 'state') | (models.Result.level == 'national') | (models.Result.level == 'district'),
         models.Result.raceid == race_id,
         models.Result.officename == officename,
         models.Result.statepostal == statepostal
