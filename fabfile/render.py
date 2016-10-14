@@ -256,7 +256,6 @@ def render_state_results():
         queries = [presidential, senate, house, governor, ballot_measures]
         for query in queries:
             results_key = [ k for k,v in locals().items() if v is query][0]
-            print results_key
             state_results[results_key] = []
 
             for result in query:
