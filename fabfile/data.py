@@ -16,7 +16,7 @@ import copytext
 def bootstrap_db():
     """
     Build the database.
-    """
+    """    
     create_db()
     create_tables()
     load_results(app_config.ELEX_INIT_FLAGS)
@@ -65,22 +65,24 @@ def load_results(flags):
     """
     election_date = app_config.NEXT_ELECTION_DATE
     with hide('output', 'running'):
-        local('mkdir -p .data')
+        local('mkdir -p {0}'.format(app_config.ELEX_OUTPUT_FOLDER))
 
-    cmd = 'elex results {0} {1} > .data/first_query.csv'.format(election_date, flags)
-    districts_cmd = 'elex results {0} {1} | csvgrep -c level -m district > .data/districts.csv'.format(election_date, app_config.ELEX_DISTRICTS_FLAGS)
+    cmd = 'elex results {0} {1} > {2}/first_query.csv'.format(election_date, flags, app_config.ELEX_OUTPUT_FOLDER)
+    districts_cmd = 'elex results {0} {1} | csvgrep -c level -m district > {2}/districts.csv'.format(election_date, app_config.ELEX_DISTRICTS_FLAGS, app_config.ELEX_OUTPUT_FOLDER)
 
 
     with shell_env(**app_config.database):
-        first_cmd_output = local(cmd, capture=True)
+        with settings(warn_only=True), hide('output', 'running'):
+            first_cmd_output = local(cmd, capture=True)
 
         if first_cmd_output.succeeded:
-            district_cmd_output = local(districts_cmd, capture=True)
+            with hide('output', 'running'):
+                district_cmd_output = local(districts_cmd, capture=True)
 
             if district_cmd_output.succeeded:
                 delete_results()
                 with hide('output', 'running'):
-                    local('csvstack .data/first_query.csv .data/districts.csv | psql {0} -c "COPY result FROM stdin DELIMITER \',\' CSV HEADER;"'.format(app_config.database['PGDATABASE']))
+                    local('csvstack {0}/first_query.csv {1}/districts.csv | psql {2} -c "COPY result FROM stdin DELIMITER \',\' CSV HEADER;"'.format(app_config.ELEX_OUTPUT_FOLDER, app_config.ELEX_OUTPUT_FOLDER, app_config.database['PGDATABASE']))
 
             else:
                 print("ERROR GETTING DISTRICT RESULTS")
@@ -90,6 +92,7 @@ def load_results(flags):
             print("ERROR GETTING MAIN RESULTS")
             print(first_cmd_output.stderr)
         
+    print('results loaded', )
 
 @task
 def create_calls():

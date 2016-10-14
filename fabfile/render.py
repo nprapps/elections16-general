@@ -78,11 +78,7 @@ ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Johnson', 'Obama', 'Romney', 'Stein']
 
 @task
 def render_presidential_state_results():
-    results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
-        (models.Result.level == 'state') | (models.Result.level == 'national') | (models.Result.level == 'district'),
-        models.Result.officename == 'President',
-        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
-    ).dicts()
+    results = _select_presidential_state_results()
     
     serialized_results = {}
 
@@ -103,12 +99,7 @@ def render_presidential_county_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
     for state in states:
-        results = models.Result.select(*PRESIDENTIAL_COUNTY_SELECTIONS).where(
-            (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district'),
-            models.Result.officename == 'President',
-            models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
-            models.Result.statepostal == state.statepostal
-        ).dicts()
+        results = _select_presidential_county_results(state.statepostal)
 
         serialized_results = {}
 
@@ -123,10 +114,7 @@ def render_presidential_county_results():
 
 @task
 def render_governor_results():
-    results = models.Result.select(*GOVERNOR_SELECTIONS).where(
-        models.Result.level == 'state',
-        models.Result.officename == 'Governor'
-    ).dicts()
+    results = _select_governor_results()
 
     serialized_results = {}
 
@@ -144,11 +132,7 @@ def render_governor_results():
 
 @task
 def render_house_results():
-    results = models.Result.select(*HOUSE_SELECTIONS).where(
-        models.Result.level == 'state',
-        models.Result.officename == 'U.S. House',
-        models.Result.raceid << app_config.SELECTED_HOUSE_RACES
-    ).dicts()
+    results = _select_house_results()
 
     serialized_results = {}
 
@@ -168,10 +152,7 @@ def render_house_results():
 
 @task
 def render_senate_results():
-    results = models.Result.select(*SENATE_SELECTIONS).where(
-        models.Result.level == 'state',
-        models.Result.officename == 'U.S. Senate'
-    ).dicts()
+    results = _select_senate_results()
 
     serialized_results = {}
 
@@ -189,10 +170,7 @@ def render_senate_results():
 
 @task
 def render_ballot_measure_results():
-    results = models.Result.select(*BALLOT_MEASURE_SELECTIONS).where(
-        models.Result.level == 'state',
-        models.Result.is_ballot_measure == True
-    ).dicts()
+    results = _select_ballot_measure_results()
 
     serialized_results = {}
 
@@ -257,6 +235,59 @@ def render_state_results():
         filename = '{0}.json'.format(state.statepostal.lower())
         _write_json_file(state_results, filename)
 
+
+
+def _select_presidential_state_results():
+    results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
+        (models.Result.level == 'state') | (models.Result.level == 'national') | (models.Result.level == 'district'),
+        models.Result.officename == 'President',
+        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
+    ).dicts()
+
+    return results
+
+def _select_presidential_county_results(statepostal):
+    results = models.Result.select(*PRESIDENTIAL_COUNTY_SELECTIONS).where(
+        (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district'),
+        models.Result.officename == 'President',
+        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
+        models.Result.statepostal == statepostal
+    ).dicts()
+
+    return results
+
+def _select_governor_results():
+    results = models.Result.select(*GOVERNOR_SELECTIONS).where(
+        models.Result.level == 'state',
+        models.Result.officename == 'Governor'
+    ).dicts()
+
+    return results
+
+def _select_house_results():
+    results = models.Result.select(*HOUSE_SELECTIONS).where(
+        models.Result.level == 'state',
+        models.Result.officename == 'U.S. House',
+        models.Result.raceid << app_config.SELECTED_HOUSE_RACES
+    ).dicts()
+
+    return results
+
+def _select_senate_results():
+    results = models.Result.select(*SENATE_SELECTIONS).where(
+        models.Result.level == 'state',
+        models.Result.officename == 'U.S. Senate'
+    ).dicts()
+
+    return results
+
+def _select_ballot_measure_results():
+    results = models.Result.select(*BALLOT_MEASURE_SELECTIONS).where(
+        models.Result.level == 'state',
+        models.Result.is_ballot_measure == True
+    ).dicts()
+
+    return results
 
 def _write_json_file(serialized_results, filename):
     with open('{0}/{1}'.format(app_config.DATA_OUTPUT_FOLDER, filename), 'w') as f:

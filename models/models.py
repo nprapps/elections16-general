@@ -4,6 +4,13 @@ from peewee import Model, PostgresqlDatabase
 from peewee import BooleanField, CharField, DateField, DateTimeField, DecimalField, ForeignKeyField, IntegerField
 from slugify import slugify
 
+import logging
+logger = logging.getLogger('peewee')
+logger.setLevel(logging.WARNING)
+logger.addHandler(logging.StreamHandler())
+
+app_config.configure_targets('test')
+
 db = PostgresqlDatabase(
     app_config.database['PGDATABASE'],
     user=app_config.database['PGUSER'],
@@ -11,7 +18,6 @@ db = PostgresqlDatabase(
     host=app_config.database['PGHOST'],
     port=app_config.database['PGPORT']
 )
-
 
 class BaseModel(Model):
     """
