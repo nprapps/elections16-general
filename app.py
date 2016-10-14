@@ -77,12 +77,15 @@ def call_npr(office):
     race_id = result.raceid
     statepostal = result.statepostal
     officename = result.officename
+    level = result.level
+    reportingunitname = result.reportingunitname
 
     race_results = models.Result.select().where(
-        (models.Result.level == 'state') | (models.Result.level == 'national') | (models.Result.level == 'district'),
+        models.Result.level == level,
         models.Result.raceid == race_id,
         models.Result.officename == officename,
-        models.Result.statepostal == statepostal
+        models.Result.statepostal == statepostal,
+        models.Result.reportingunitname == reportingunitname
     )
 
     for race_result in race_results:
@@ -105,13 +108,24 @@ def accept_ap(office):
 
     race_id = request.form.get('race_id')
     statepostal = request.form.get('statepostal')
+    reportingunit = request.form.get('reportingunit')
+    level = request.form.get('level')
 
-    results = models.Result.select().where(
-        models.Result.level == 'state',
-        models.Result.raceid == race_id,
-        models.Result.officename == officename,
-        models.Result.statepostal == statepostal
-    )
+    if level == 'district':
+        results = models.Result.select().where(
+            models.Result.level == 'district',
+            models.Result.raceid == race_id,
+            models.Result.officename == officename,
+            models.Result.statepostal == statepostal,
+            models.Result.reportingunitname == reportingunit
+        )
+    else:
+        results = models.Result.select().where(
+            (models.Result.level == 'state') | (models.Result.level == 'national'),
+            models.Result.raceid == race_id,
+            models.Result.officename == officename,
+            models.Result.statepostal == statepostal,
+        )
 
     for result in results:
         call = result.call[0]

@@ -44,11 +44,11 @@
                         <div class="ap-btns">
                             <button
                                 class="btn btn-success btn-mini ap accept-ap {% if not results[0].call[0].accept_ap %} hidden {% endif %}"
-                                data-race-id="{{ results[0].raceid }}" data-statepostal="{{ results[0].statepostal }}">
+                                data-race-id="{{ results[0].raceid }}" data-statepostal="{{ results[0].statepostal }}" data-reportingunit="{{ results[0].reportingunitname }}" data-level="{{ results[0].level }}">
                                 Accepting AP calls
                             </button>
 
-                            <button class="btn btn-warning btn-mini ap reject-ap {% if  results[0].call[0].accept_ap %} hidden {% endif %}" data-race-id="{{ results[0].raceid }}" data-statepostal="{{ results[0].statepostal }}">
+                            <button class="btn btn-warning btn-mini ap reject-ap {% if  results[0].call[0].accept_ap %} hidden {% endif %}" data-race-id="{{ results[0].raceid }}" data-statepostal="{{ results[0].statepostal }}" data-reportingunit="{{ results[0].reportingunitname }}" data-level="{{ results[0].level }}">
                                 Not accepting AP Calls
                             </button>
                         </div>
