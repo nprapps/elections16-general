@@ -84,11 +84,11 @@ def load_results(flags):
 
             else:
                 print("ERROR GETTING DISTRICT RESULTS")
-                print(cmd_output.stderr)
+                print(district_cmd_output.stderr)
 
         else:
             print("ERROR GETTING MAIN RESULTS")
-            print(cmd_output.stderr)
+            print(first_cmd_output.stderr)
         
 
 @task

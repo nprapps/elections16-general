@@ -90,13 +90,9 @@ def render_presidential_state_results():
         if not serialized_results.get(result['statepostal']):
             serialized_results[result['statepostal']] = []
 
-        call = models.Call.get(models.Call.call_id == result['id'])
-        result['call'] = model_to_dict(call, only=CALLS_SELECTIONS)
-
-        # no race meta for national race
-        if result['level'] != 'national':
-            meta = models.RaceMeta.get(models.RaceMeta.result_id == result['id'])
-            result['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
+        _set_call(result)
+        _set_meta(result)
+        _determine_winner(result)
 
         serialized_results[result['statepostal']].append(result)
 
@@ -138,11 +134,9 @@ def render_governor_results():
         if not serialized_results.get(result['statepostal']):
             serialized_results[result['statepostal']] = []
 
-        call = models.Call.get(models.Call.call_id == result['id'])
-        result['call'] = model_to_dict(call, only=CALLS_SELECTIONS)
-
-        meta = models.RaceMeta.get(models.RaceMeta.result_id == result['id'])
-        result['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
+        _set_call(result)
+        _set_meta(result)
+        _determine_winner(result)
 
         serialized_results[result['statepostal']].append(result)
 
@@ -164,11 +158,9 @@ def render_house_results():
         if not serialized_results.get(slug):
             serialized_results[slug] = []
 
-        call = models.Call.get(models.Call.call_id == result['id'])
-        result['call'] = model_to_dict(call, only=CALLS_SELECTIONS)
-
-        meta = models.RaceMeta.get(models.RaceMeta.result_id == result['id'])
-        result['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
+        _set_call(result)
+        _set_meta(result)
+        _determine_winner(result)
 
         serialized_results[slug].append(result)
 
@@ -187,11 +179,9 @@ def render_senate_results():
         if not serialized_results.get(result['statepostal']):
             serialized_results[result['statepostal']] = []
 
-        call = models.Call.get(models.Call.call_id == result['id'])
-        result['call'] = model_to_dict(call, only=CALLS_SELECTIONS)
-
-        meta = models.RaceMeta.get(models.RaceMeta.result_id == result['id'])
-        result['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
+        _set_call(result)
+        _set_meta(result)
+        _determine_winner(result)
 
         serialized_results[result['statepostal']].append(result)
 
@@ -210,11 +200,9 @@ def render_ballot_measure_results():
         if not serialized_results.get(result['statepostal']):
             serialized_results[result['statepostal']] = []
 
-        call = models.Call.get(models.Call.call_id == result['id'])
-        result['call'] = model_to_dict(call, only=CALLS_SELECTIONS)
-
-        meta = models.RaceMeta.get(models.RaceMeta.result_id == result['id'])
-        result['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
+        _set_call(result)
+        _set_meta(result)
+        _determine_winner(result)
 
         serialized_results[result['statepostal']].append(result)
 
@@ -259,11 +247,9 @@ def render_state_results():
             state_results[results_key] = []
 
             for result in query:
-                call = models.Call.get(models.Call.call_id == result['id'])
-                result['call'] = model_to_dict(call, only=CALLS_SELECTIONS)
-
-                meta = models.RaceMeta.get(models.RaceMeta.result_id == result['id'])
-                result['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
+                _set_call(result)
+                _set_meta(result)
+                _determine_winner(result)
 
                 state_results[results_key].append(result)
 
@@ -271,9 +257,23 @@ def render_state_results():
         filename = '{0}.json'.format(state.statepostal.lower())
         _write_json_file(state_results, filename)
 
+
 def _write_json_file(serialized_results, filename):
     with open('{0}/{1}'.format(app_config.DATA_OUTPUT_FOLDER, filename), 'w') as f:
         json.dump(serialized_results, f, use_decimal=True, cls=utils.APDatetimeEncoder)
+
+def _determine_winner(result):
+    if (result['winner'] and result['call']['accept_ap']) or result['call']['override_winner']:
+        result['npr_winner'] = True
+
+def _set_call(result):
+    call = models.Call.get(models.Call.call_id == result['id'])
+    result['call'] = model_to_dict(call, only=CALLS_SELECTIONS)
+
+def _set_meta(result):
+    if result['level'] != 'national':
+        meta = models.RaceMeta.get(models.RaceMeta.result_id == result['id'])
+        result['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
 
 @task
 def render_all():
