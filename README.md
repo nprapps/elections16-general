@@ -97,6 +97,8 @@ pip install -r requirements.txt
 npm install
 ```
 
+Note that deployment depends on `awscli`, which is broken on pip at the moment. Use your operating system's package manager to install it instead. (On Macs, use `brew install awscli`).
+
 **Problems installing requirements?** You may need to run the pip command as ``ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future pip install -r requirements.txt`` to work around an issue with OSX.
 
 Hide project secrets
