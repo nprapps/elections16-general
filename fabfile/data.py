@@ -111,9 +111,8 @@ def create_race_meta():
 
     calendar = copytext.Copy(app_config.CALENDAR_PATH)
     calendar_sheet = calendar['polls']
-
+    
     for row in calendar_sheet:
-
         results = models.Result.select().where(
             (models.Result.level == 'state') | (models.Result.level == 'district'),
             models.Result.statepostal == row['key'],
@@ -125,6 +124,7 @@ def create_race_meta():
                 poll_closing=row['time_est'],
                 first_results=row['first_results_est']
             )
+
 
 @task
 def copy_data_for_graphics():

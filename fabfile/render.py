@@ -147,18 +147,7 @@ def render_governor_results():
         models.Result.officename == 'Governor'
     ).dicts()
 
-    serialized_results = {}
-
-    for result in results:
-        if not serialized_results.get(result['statepostal']):
-            serialized_results[result['statepostal']] = []
-
-        _set_call(result)
-        _set_meta(result)
-        _determine_winner(result)
-
-        serialized_results[result['statepostal']].append(result)
-
+    serialized_results = _serialize_results(results)
     _write_json_file(serialized_results, 'governor-national.json')
 
 @task
@@ -169,20 +158,7 @@ def render_house_results():
         models.Result.raceid << app_config.SELECTED_HOUSE_RACES
     ).dicts()
 
-    serialized_results = {}
-
-    for result in results:
-        slug = '{0}-{1}'.format(result['statepostal'], ['result.seatnum'])
-
-        if not serialized_results.get(slug):
-            serialized_results[slug] = []
-
-        _set_call(result)
-        _set_meta(result)
-        _determine_winner(result)
-
-        serialized_results[slug].append(result)
-
+    serialized_results = _serialize_results(results)
     _write_json_file(serialized_results, 'house-national.json')
 
 @task
@@ -192,18 +168,7 @@ def render_senate_results():
         models.Result.officename == 'U.S. Senate'
     ).dicts()
 
-    serialized_results = {}
-
-    for result in results:
-        if not serialized_results.get(result['statepostal']):
-            serialized_results[result['statepostal']] = []
-
-        _set_call(result)
-        _set_meta(result)
-        _determine_winner(result)
-
-        serialized_results[result['statepostal']].append(result)
-
+    serialized_results = _serialize_results(results)
     _write_json_file(serialized_results, 'senate-national.json')
 
 @task
@@ -213,19 +178,9 @@ def render_ballot_measure_results():
         models.Result.is_ballot_measure == True
     ).dicts()
 
-    serialized_results = {}
-
-    for result in results:
-        if not serialized_results.get(result['statepostal']):
-            serialized_results[result['statepostal']] = []
-
-        _set_call(result)
-        _set_meta(result)
-        _determine_winner(result)
-
-        serialized_results[result['statepostal']].append(result)
-
+    serialized_results = _serialize_results(results)
     _write_json_file(serialized_results, 'ballot-measures-national.json')
+
 
 @task
 def render_state_results():
@@ -263,6 +218,7 @@ def render_state_results():
         queries = [presidential, senate, house, governor, ballot_measures]
         for query in queries:
             results_key = [ k for k,v in locals().items() if v is query][0]
+            print(query, results_key)
             state_results[results_key] = []
 
             for result in query:
@@ -276,6 +232,21 @@ def render_state_results():
         filename = '{0}.json'.format(state.statepostal.lower())
         _write_json_file(state_results, filename)
 
+
+def _serialize_results(results, key='statepostal'):
+    serialized_results = {}
+
+    for result in results:
+        if not serialized_results.get(result[key]):
+            serialized_results[result[key]] = []
+
+        _set_call(result)
+        _set_meta(result)
+        _determine_winner(result)
+
+        serialized_results[result[key]].append(result)
+
+    return serialized_results
 
 def _write_json_file(serialized_results, filename):
     with open('{0}/{1}'.format(app_config.DATA_OUTPUT_FOLDER, filename), 'w') as f:
@@ -297,7 +268,7 @@ def _determine_winner(result, electoral_totals={}):
     if (result['winner'] and result['call']['accept_ap']) or result['call']['override_winner']:
         result['npr_winner'] = True
         
-        if (result['officename'] == 'President'):
+        if result['officename'] == 'President':
             electoral_totals[result['party']] += int(result['electwon'])
 
 def _set_electoral_counts(result, electoral_totals):
