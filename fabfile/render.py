@@ -73,7 +73,7 @@ RACE_META_SELECTIONS = [
     models.RaceMeta.first_results
 ]
 
-ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Clinton', 'Johnson', 'Stein', 'Trump']
+ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Clinton', 'Johnson', 'Stein', 'Trump', 'McMullin']
 
 
 @task
