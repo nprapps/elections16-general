@@ -79,12 +79,13 @@ ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Johnson', 'Obama', 'Romney', 'Stein']
 @task
 def render_presidential_state_results():
     results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
-        (models.Result.level == 'state') | (models.Result.level == 'national') | (models.Result.level == 'district'),
+        (models.Result.level == 'state') | (models.Result.level == 'district'),
         models.Result.officename == 'President',
         models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
     ).dicts()
     
     serialized_results = {}
+    electoral_totals = {}
 
     for result in results:
         if not serialized_results.get(result['statepostal']):
@@ -92,7 +93,25 @@ def render_presidential_state_results():
 
         _set_call(result)
         _set_meta(result)
-        _determine_winner(result)
+        _determine_winner(result, electoral_totals)
+
+        serialized_results[result['statepostal']].append(result)
+
+    # now that we have correct electoral counts, get the national results
+    # this sucks
+    national_results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
+        models.Result.level == 'national',
+        models.Result.officename == 'President',
+        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
+    ).dicts()
+
+    for result in national_results:
+        if not serialized_results.get(result['statepostal']):
+            serialized_results[result['statepostal']] = []
+        
+        _set_call(result)
+        _set_meta(result)
+        _set_electoral_counts(result, electoral_totals)
 
         serialized_results[result['statepostal']].append(result)
 
@@ -262,10 +281,6 @@ def _write_json_file(serialized_results, filename):
     with open('{0}/{1}'.format(app_config.DATA_OUTPUT_FOLDER, filename), 'w') as f:
         json.dump(serialized_results, f, use_decimal=True, cls=utils.APDatetimeEncoder)
 
-def _determine_winner(result):
-    if (result['winner'] and result['call']['accept_ap']) or result['call']['override_winner']:
-        result['npr_winner'] = True
-
 def _set_call(result):
     call = models.Call.get(models.Call.call_id == result['id'])
     result['call'] = model_to_dict(call, only=CALLS_SELECTIONS)
@@ -274,6 +289,21 @@ def _set_meta(result):
     if result['level'] != 'national':
         meta = models.RaceMeta.get(models.RaceMeta.result_id == result['id'])
         result['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
+
+def _determine_winner(result, electoral_totals):
+    if not electoral_totals.get(result['party']):
+        electoral_totals[result['party']] = 0
+
+    if (result['winner'] and result['call']['accept_ap']) or result['call']['override_winner']:
+        result['npr_winner'] = True
+        
+        if (result['officename'] == 'President'):
+            electoral_totals[result['party']] += int(result['electwon'])
+
+def _set_electoral_counts(result, electoral_totals):
+    party = result['party']
+    result['npr_electwon'] = electoral_totals[party]
+
 
 @task
 def render_all():
