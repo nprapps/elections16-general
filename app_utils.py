@@ -5,7 +5,7 @@ from peewee import fn
 
 def filter_results(name):
     results = models.Result.select().where(
-        models.Result.level == 'state',
+        (models.Result.level == 'state') | (models.Result.level == 'national') | (models.Result.level == 'district'),
         models.Result.officename == name
     ).order_by(models.Result.statepostal, models.Result.seatname, -models.Result.votecount, models.Result.last)
 
@@ -15,10 +15,15 @@ def group_results_by_race(results, name):
     grouped = OrderedDict()
     for result in results:
         if name == 'President':
-            if result.statepostal not in grouped:
-                grouped[result.statepostal] = []
+            if result.reportingunitname:
+                slug = '{0}: {1}'.format(result.statepostal, result.reportingunitname)
+            else:
+                slug = result.statepostal
 
-            grouped[result.statepostal].append(result)
+            if slug not in grouped:
+                grouped[slug] = []
+
+            grouped[slug].append(result)
         else:
             if result.raceid not in grouped:
                 grouped[result.raceid] = []

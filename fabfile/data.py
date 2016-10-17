@@ -116,7 +116,6 @@ def create_race_meta():
     calendar_sheet = calendar['polls']
 
     for row in calendar_sheet:
-
         results = models.Result.select().where(
             (models.Result.level == 'state') | (models.Result.level == 'district'),
             models.Result.statepostal == row['key'],
@@ -129,7 +128,14 @@ def create_race_meta():
                 first_results=row['first_results_est']
             )
 
+
 @task
 def copy_data_for_graphics():
     execute('render.render_all')
-    local('cp -r .rendered/* ../elections16graphics/www/data/')
+
+    if app_config.NEXT_ELECTION_DATE[:4] == '2012':
+        graphics_folder = '../elections16graphics/www/2012/data/'
+    else:
+        graphics_folder = '../elections16graphics/www/data/'
+
+    local('cp -r {0}/* {1}'.format(app_config.DATA_OUTPUT_FOLDER, graphics_folder))
