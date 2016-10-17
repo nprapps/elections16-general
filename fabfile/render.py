@@ -85,11 +85,7 @@ def render_presidential_state_results():
 
     # now that we have correct electoral counts, get the national results
     # this sucks
-    national_results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
-        models.Result.level == 'national',
-        models.Result.officename == 'President',
-        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
-    ).dicts()
+    national_results = _select_presidential_national_results()
 
     national_serialized_results = _serialize_results(national_results, determine_winner=False, electoral_totals=electoral_totals, is_national_results=True)
 
@@ -203,6 +199,15 @@ def _serialize_results(results, key='statepostal', apply_backrefs=True, determin
 def _select_presidential_state_results():
     results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
         (models.Result.level == 'state') | (models.Result.level == 'district'),
+        models.Result.officename == 'President',
+        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
+    ).dicts()
+
+    return results
+
+def _select_presidential_national_results():
+    results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
+        models.Result.level == 'national',
         models.Result.officename == 'President',
         models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
     ).dicts()

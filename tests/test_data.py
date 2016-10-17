@@ -49,7 +49,12 @@ class ResultsRenderingTestCase(unittest.TestCase):
     def test_presidential_state_selection(self):
         results = render._select_presidential_state_results()
         results_length = len(results)
-        self.assertEqual(results_length, 216)
+        self.assertEqual(results_length, 212)
+
+    def test_presidential_national_selection(self):
+        results = render._select_presidential_national_results()
+        results_length = len(results)
+        self.assertEqual(results_length, 4)
 
     def test_presidential_county_selection(self):
         results = render._select_presidential_county_results('PA')
@@ -76,6 +81,17 @@ class ResultsRenderingTestCase(unittest.TestCase):
         results_length = len(results)
         self.assertEqual(results_length, 78)
 
+    def test_calculate_electoral_college(self):
+        state_results = render._select_presidential_state_results()
+        electoral_totals = {}
+        serialized_results = render._serialize_results(state_results, electoral_totals=electoral_totals)
+
+        national_results = render._select_presidential_national_results()
+        national_serialized_results = render._serialize_results(national_results, determine_winner=False, electoral_totals=electoral_totals, is_national_results=True)
+
+        for result in national_serialized_results['US']:
+            if result['party'] == 'Dem':
+                self.assertEqual(result['npr_electwon'], 332)
 
 
 if __name__ == '__main__':
