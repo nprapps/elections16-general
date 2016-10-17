@@ -196,15 +196,7 @@ def render_state_results():
         queries = [presidential, senate, house, governor, ballot_measures]
         for query in queries:
             results_key = [ k for k,v in locals().items() if v is query][0]
-            state_results[results_key] = []
-
-            for result in query:
-                _set_call(result)
-                _set_meta(result)
-                _determine_winner(result)
-
-                state_results[results_key].append(result)
-
+            state_results[results_key] = _serialize_results(query)
 
         filename = '{0}.json'.format(state.statepostal.lower())
         _write_json_file(state_results, filename)
@@ -253,7 +245,6 @@ def _determine_winner(result, electoral_totals={}):
         
         if result['officename'] == 'President':
             if not (result['level'] == 'state' and (result['statename'] == 'Maine' or result['statename'] == 'Nebraska')):
-                print(result['party'], result['statename'], result['electwon'])
                 electoral_totals[result['party']] += int(result['electwon'])
 
 def _set_electoral_counts(result, electoral_totals):
