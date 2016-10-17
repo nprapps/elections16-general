@@ -93,7 +93,7 @@ def render_presidential_state_results():
 
         _set_call(result)
         _set_meta(result)
-        _determine_winner(result, electoral_totals)
+        _determine_winner(result, electoral_totals=electoral_totals)
 
         serialized_results[result['statepostal']].append(result)
 
@@ -290,7 +290,7 @@ def _set_meta(result):
         meta = models.RaceMeta.get(models.RaceMeta.result_id == result['id'])
         result['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
 
-def _determine_winner(result, electoral_totals):
+def _determine_winner(result, electoral_totals={}):
     if not electoral_totals.get(result['party']):
         electoral_totals[result['party']] = 0
 
