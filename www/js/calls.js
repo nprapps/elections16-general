@@ -27,9 +27,14 @@ var onDocumentLoad = function() {
 }
 
 var onAPClick = function(e) {
+    var reportingunit = $(this).data('reportingunit') !== 'None' ? $(this).data('reportingunit') : ''
+
+    console.log(reportingunit);
     var data = {
         race_id: $(this).data('race-id'),
-        statepostal: $(this).data('statepostal')
+        statepostal: $(this).data('statepostal'),
+        reportingunit: reportingunit,
+        level: $(this).data('level')
     }
 
     $overlay.fadeIn();

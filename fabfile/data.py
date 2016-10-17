@@ -19,7 +19,7 @@ def bootstrap_db():
     """
     create_db()
     create_tables()
-    load_results(app_config.SLOW_ELEX_FLAGS)
+    load_results(app_config.ELEX_INIT_FLAGS)
     create_calls()
     create_race_meta()
 
@@ -84,11 +84,11 @@ def load_results(flags):
 
             else:
                 print("ERROR GETTING DISTRICT RESULTS")
-                print(cmd_output.stderr)
+                print(district_cmd_output.stderr)
 
         else:
             print("ERROR GETTING MAIN RESULTS")
-            print(cmd_output.stderr)
+            print(first_cmd_output.stderr)
         
 
 @task
