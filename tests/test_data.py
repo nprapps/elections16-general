@@ -93,6 +93,37 @@ class ResultsRenderingTestCase(unittest.TestCase):
             if result['party'] == 'Dem':
                 self.assertEqual(result['npr_electwon'], 332)
 
+    def test_npr_winner_determination(self):
+        senate_results = render._select_senate_results()
+        serialized_results = render._serialize_results(senate_results)
+
+        for result in serialized_results['FL']:
+            if result['party'] == 'Dem':
+                self.assertTrue(result['npr_winner'])
+
+    def test_attach_call_to_results(self):
+        governor_results = render._select_governor_results()
+        serialized_results = render._serialize_results(governor_results)
+
+        self.assertTrue(serialized_results['ND'][0]['call']['accept_ap'])
+
+    def test_attach_meta_to_results(self):
+        presidential_results = render._select_presidential_state_results()
+        serialized_results = render._serialize_results(presidential_results)
+
+        self.assertEqual(serialized_results['KS'][0]['meta']['first_results'], '8:00 PM')
+
+    def test_serialization(self):
+        presidential_results = render._select_presidential_state_results()
+        serialized_results = render._serialize_results(presidential_results)
+
+        self.assertEqual(len(serialized_results.keys()), 51)
+
+    def test_custom_key_serialization(self):
+        county_results = render._select_presidential_county_results('FL')
+        serialized_results = render._serialize_results(county_results, key='fipscode', apply_backrefs=False, determine_winner=False)
+
+        self.assertEqual(len(serialized_results.keys()), 67)
 
 if __name__ == '__main__':
     unittest.main()
