@@ -73,7 +73,7 @@ RACE_META_SELECTIONS = [
     models.RaceMeta.first_results
 ]
 
-ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Clinton', 'Johnson', 'Stein', 'Trump', 'McMullin']
+ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Obama', 'Johnson', 'Stein', 'Romney', 'McMullin']
 
 
 @task
@@ -84,18 +84,8 @@ def render_presidential_state_results():
         models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
     ).dicts()
     
-    serialized_results = {}
     electoral_totals = {}
-
-    for result in results:
-        if not serialized_results.get(result['statepostal']):
-            serialized_results[result['statepostal']] = []
-
-        _set_call(result)
-        _set_meta(result)
-        _determine_winner(result, electoral_totals=electoral_totals)
-
-        serialized_results[result['statepostal']].append(result)
+    serialized_results = _serialize_results(results, electoral_totals=electoral_totals)
 
     # now that we have correct electoral counts, get the national results
     # this sucks
@@ -105,17 +95,11 @@ def render_presidential_state_results():
         models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
     ).dicts()
 
-    for result in national_results:
-        if not serialized_results.get(result['statepostal']):
-            serialized_results[result['statepostal']] = []
-        
-        _set_call(result)
-        _set_meta(result)
-        _set_electoral_counts(result, electoral_totals)
+    national_serialized_results = _serialize_results(national_results, determine_winner=False, electoral_totals=electoral_totals, is_national_results=True)
 
-        serialized_results[result['statepostal']].append(result)
+    all_results = {**serialized_results, **national_serialized_results}
 
-    _write_json_file(serialized_results, 'presidential-national.json')
+    _write_json_file(all_results, 'presidential-national.json')
 
 @task
 def render_presidential_county_results():
@@ -129,13 +113,7 @@ def render_presidential_county_results():
             models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
         ).dicts()
 
-        serialized_results = {}
-
-        for result in results:
-            if not serialized_results.get(result['fipscode']):
-                serialized_results[result['fipscode']] = []
-
-            serialized_results[result['fipscode']].append(result)
+        serialized_results = _serialize_results(results, key='fipscode', apply_backrefs=False, determine_winner=False)
 
         filename = 'presidential-{0}-counties.json'.format(state.statepostal.lower())
         _write_json_file(serialized_results, filename)
@@ -232,16 +210,22 @@ def render_state_results():
         _write_json_file(state_results, filename)
 
 
-def _serialize_results(results, key='statepostal'):
+def _serialize_results(results, key='statepostal', apply_backrefs=True, determine_winner=True, electoral_totals={}, is_national_results=False):
     serialized_results = {}
 
     for result in results:
         if not serialized_results.get(result[key]):
             serialized_results[result[key]] = []
 
-        _set_call(result)
-        _set_meta(result)
-        _determine_winner(result)
+        if apply_backrefs:
+            _set_call(result)
+            _set_meta(result)
+
+        if determine_winner:
+            _determine_winner(result, electoral_totals)
+
+        if is_national_results:
+            _set_electoral_counts(result, electoral_totals)
 
         serialized_results[result[key]].append(result)
 
@@ -268,7 +252,9 @@ def _determine_winner(result, electoral_totals={}):
         result['npr_winner'] = True
         
         if result['officename'] == 'President':
-            electoral_totals[result['party']] += int(result['electwon'])
+            if not (result['level'] == 'state' and (result['statename'] == 'Maine' or result['statename'] == 'Nebraska')):
+                print(result['party'], result['statename'], result['electwon'])
+                electoral_totals[result['party']] += int(result['electwon'])
 
 def _set_electoral_counts(result, electoral_totals):
     party = result['party']
