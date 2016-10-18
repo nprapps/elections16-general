@@ -45,6 +45,7 @@ PRESIDENTIAL_COUNTY_SELECTIONS = COMMON_SELECTIONS + [
 HOUSE_SELECTIONS = COMMON_SELECTIONS + [
     models.Result.incumbent,
     models.Result.runoff,
+    models.Result.raceid,
     models.Result.seatname,
     models.Result.seatnum
 ]
@@ -136,7 +137,7 @@ def render_house_results():
         models.Result.raceid << app_config.SELECTED_HOUSE_RACES
     ).dicts()
 
-    serialized_results = _serialize_results(results)
+    serialized_results = _serialize_results(results, key='raceid')
     _write_json_file(serialized_results, 'house-national.json')
 
 @task
