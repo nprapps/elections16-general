@@ -19,7 +19,7 @@ def bootstrap_db():
     """
     create_db()
     create_tables()
-    load_results(app_config.ELEX_INIT_FLAGS)
+    load_results('init')
     create_calls()
     create_race_meta()
 
@@ -51,18 +51,33 @@ def create_tables():
     models.RaceMeta.create_table()
 
 @task
-def delete_results():
+def delete_results(mode):
     """
     Delete results without droppping database.
     """
+    if mode == 'fast':
+        where_clause = "WHERE level = 'state' OR level = 'national' OR level = 'district'"
+    elif mode == 'slow':
+        where_clause = "WHERE officename = 'President'"
+    else:
+        where_clause = ''
+
     with shell_env(**app_config.database), hide('output', 'running'):
-        local('psql {0} -c "set session_replication_role = replica; DELETE FROM result; set session_replication_role = default;"'.format(app_config.database['PGDATABASE']))
+        local('psql {0} -c "set session_replication_role = replica; DELETE FROM result {1}; set session_replication_role = default;"'.format(app_config.database['PGDATABASE'], where_clause))
 
 @task
-def load_results(flags):
+def load_results(mode):
     """
     Load AP results. Defaults to next election, or specify a date as a parameter.
     """
+
+    if mode == 'fast':
+        flags = app_config.FAST_ELEX_FLAGS
+    elif mode == 'slow':
+        flags = app_config.SLOW_ELEX_FLAGS
+    else:
+        flags = app_config.ELEX_INIT_FLAGS
+
     election_date = app_config.NEXT_ELECTION_DATE
     with hide('output', 'running'):
         local('mkdir -p .data')
@@ -78,7 +93,7 @@ def load_results(flags):
             district_cmd_output = local(districts_cmd, capture=True)
 
             if district_cmd_output.succeeded:
-                delete_results()
+                delete_results(mode)
                 with hide('output', 'running'):
                     local('csvstack .data/first_query.csv .data/districts.csv | psql {0} -c "COPY result FROM stdin DELIMITER \',\' CSV HEADER;"'.format(app_config.database['PGDATABASE']))
 
