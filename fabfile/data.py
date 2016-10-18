@@ -4,13 +4,14 @@
 Commands that update or process the application data.
 """
 import app_config
+import copytext
+import csv
+import yaml
 
 from oauth import get_document
 from fabric.api import execute, hide, local, task, settings, shell_env
 from fabric.state import env
 from models import models
-
-import copytext
 
 @task
 def bootstrap_db():
@@ -151,3 +152,44 @@ def copy_data_for_graphics():
         graphics_folder = '../elections16graphics/www/data/'
 
     local('cp -r {0}/* {1}'.format(app_config.DATA_OUTPUT_FOLDER, graphics_folder))
+
+@task
+def build_current_congress():
+    party_dict = {
+        'Democrat': 'Dem',
+        'Republican': 'GOP',
+        'Independent': 'Ind'
+    }
+
+    house_fieldnames = ['first', 'last', 'party', 'state', 'district']
+    senate_fieldnames = ['first', 'last', 'party', 'state']
+    
+    with open('data/house-seats.csv', 'w') as f:
+        house_writer = csv.DictWriter(f, fieldnames=house_fieldnames)
+        house_writer.writeheader()
+        
+        with open('data/senate-seats.csv', 'w') as f:
+            senate_writer = csv.DictWriter(f, fieldnames=senate_fieldnames)
+            senate_writer.writeheader()
+
+            with open('etc/legislators-current.yaml') as f:
+                data = yaml.load(f)
+
+            for legislator in data:
+                current_term = legislator['terms'][-1]
+
+                if current_term['end'][:4] == '2017':
+                    obj = {
+                        'first': legislator['name']['first'],
+                        'last': legislator['name']['last'],
+                        'state': current_term['state'],
+                        'party': party_dict[current_term['party']]
+                    }
+
+                    if current_term.get('district'):
+                        obj['district'] = current_term['district']
+
+                    if current_term['type'] == 'sen':
+                        senate_writer.writerow(obj)
+                    elif current_term['type'] == 'rep':
+                        house_writer.writerow(obj)
