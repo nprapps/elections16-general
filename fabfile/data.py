@@ -164,32 +164,31 @@ def build_current_congress():
     house_fieldnames = ['first', 'last', 'party', 'state', 'district']
     senate_fieldnames = ['first', 'last', 'party', 'state']
     
-    with open('data/house-seats.csv', 'w') as f:
-        house_writer = csv.DictWriter(f, fieldnames=house_fieldnames)
+    with open('data/house-seats.csv', 'w') as h, open('data/senate-seats.csv', 'w') as s:
+        house_writer = csv.DictWriter(h, fieldnames=house_fieldnames)
         house_writer.writeheader()
         
-        with open('data/senate-seats.csv', 'w') as f:
-            senate_writer = csv.DictWriter(f, fieldnames=senate_fieldnames)
-            senate_writer.writeheader()
+        senate_writer = csv.DictWriter(s, fieldnames=senate_fieldnames)
+        senate_writer.writeheader()
 
-            with open('etc/legislators-current.yaml') as f:
-                data = yaml.load(f)
+        with open('etc/legislators-current.yaml') as f:
+            data = yaml.load(f)
 
-            for legislator in data:
-                current_term = legislator['terms'][-1]
+        for legislator in data:
+            current_term = legislator['terms'][-1]
 
-                if current_term['end'][:4] == '2017':
-                    obj = {
-                        'first': legislator['name']['first'],
-                        'last': legislator['name']['last'],
-                        'state': current_term['state'],
-                        'party': party_dict[current_term['party']]
-                    }
+            if current_term['end'][:4] == '2017':
+                obj = {
+                    'first': legislator['name']['first'],
+                    'last': legislator['name']['last'],
+                    'state': current_term['state'],
+                    'party': party_dict[current_term['party']]
+                }
 
-                    if current_term.get('district'):
-                        obj['district'] = current_term['district']
+                if current_term.get('district'):
+                    obj['district'] = current_term['district']
 
-                    if current_term['type'] == 'sen':
-                        senate_writer.writerow(obj)
-                    elif current_term['type'] == 'rep':
-                        house_writer.writerow(obj)
+                if current_term['type'] == 'sen':
+                    senate_writer.writerow(obj)
+                elif current_term['type'] == 'rep':
+                    house_writer.writerow(obj)
