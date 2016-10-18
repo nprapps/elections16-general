@@ -126,21 +126,35 @@ def create_race_meta():
     models.RaceMeta.delete().execute()
 
     calendar = copytext.Copy(app_config.CALENDAR_PATH)
-    calendar_sheet = calendar['polls']
+    calendar_sheet = calendar['poll_times']
+    senate_sheet = calendar['senate_seats']
+    house_sheet = calendar['house_seats']
 
-    for row in calendar_sheet:
-        results = models.Result.select().where(
-            (models.Result.level == 'state') | (models.Result.level == 'district'),
-            models.Result.statepostal == row['key'],
-        )
+    results = models.Result.select()
+    for result in results:
+        meta_obj = {
+            'result_id': result.id
+        }
 
-        for result in results:
-            models.RaceMeta.create(
-                result_id=result.id,
-                poll_closing=row['time_est'],
-                first_results=row['first_results_est']
-            )
+        if result.level == 'county' or result.level == 'township':
+            continue
 
+        if result.level == 'state' or result.level == 'district':
+            calendar_row = list(filter(lambda x: x['key'] == result.statepostal, calendar_sheet))[0]
+
+            meta_obj['poll_closing'] = calendar_row['time_est']
+            meta_obj['first_results'] = calendar_row['first_results_est']
+
+        if result.level == 'state' and result.officename == 'U.S. House':
+            seat = '{0}-{1}'.format(result.statepostal, result.seatnum)
+            house_row = list(filter(lambda x: x['seat'] == seat, house_sheet))[0]
+            meta_obj['current_party'] = house_row['party']
+
+        if result.level == 'state' and result.officename == 'U.S. Senate':
+            senate_row = list(filter(lambda x: x['state'] == result.statepostal, senate_sheet))[0]
+            meta_obj['current_party'] = senate_row['party']
+
+        models.RaceMeta.create(**meta_obj)
 
 @task
 def copy_data_for_graphics():
@@ -161,7 +175,7 @@ def build_current_congress():
         'Independent': 'Ind'
     }
 
-    house_fieldnames = ['first', 'last', 'party', 'state', 'district']
+    house_fieldnames = ['first', 'last', 'party', 'state', 'seat']
     senate_fieldnames = ['first', 'last', 'party', 'state']
     
     with open('data/house-seats.csv', 'w') as h, open('data/senate-seats.csv', 'w') as s:
@@ -186,7 +200,7 @@ def build_current_congress():
                 }
 
                 if current_term.get('district'):
-                    obj['district'] = current_term['district']
+                    obj['seat'] = '{0}-{1}'.format(current_term['state'], current_term['district'])
 
                 if current_term['type'] == 'sen':
                     senate_writer.writerow(obj)
