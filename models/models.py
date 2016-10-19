@@ -9,7 +9,7 @@ logger = logging.getLogger('peewee')
 logger.setLevel(logging.WARNING)
 logger.addHandler(logging.StreamHandler())
 
-app_config.configure_targets('test')
+# app_config.configure_targets('test')
 
 db = PostgresqlDatabase(
     app_config.database['PGDATABASE'],
