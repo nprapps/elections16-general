@@ -34,7 +34,8 @@ COMMON_SELECTIONS = [
 ]
 
 PRESIDENTIAL_STATE_SELECTIONS = COMMON_SELECTIONS + [
-    models.Result.reportingunitname
+    models.Result.reportingunitname,
+    models.Result.meta
 ]
 
 PRESIDENTIAL_COUNTY_SELECTIONS = COMMON_SELECTIONS + [
@@ -47,21 +48,25 @@ HOUSE_SELECTIONS = COMMON_SELECTIONS + [
     models.Result.runoff,
     models.Result.raceid,
     models.Result.seatname,
-    models.Result.seatnum
+    models.Result.seatnum,
+    models.Result.meta
 ]
 
 SENATE_SELECTIONS = COMMON_SELECTIONS + [
     models.Result.incumbent,
-    models.Result.runoff
+    models.Result.runoff,
+    models.Result.meta
 ]
 
 GOVERNOR_SELECTIONS = COMMON_SELECTIONS + [
-    models.Result.incumbent
+    models.Result.incumbent,
+    models.Result.meta
 ]
 
 BALLOT_MEASURE_SELECTIONS = COMMON_SELECTIONS + [
     models.Result.officename,
-    models.Result.seatname
+    models.Result.seatname,
+    models.Result.meta
 ]
 
 CALLS_SELECTIONS = [
@@ -349,6 +354,10 @@ def _serialize_results(results, selections, key='statepostal', determine_winner=
 
         if not serialized_results.get(result_dict[key]):
             serialized_results[result_dict[key]] = []
+
+        if result.level != 'county' and result.level != 'township':
+            meta = models.RaceMeta.get(models.RaceMeta.result_id == result.id)
+            result_dict['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
 
         if determine_winner:
             result_dict['npr_winner'] = result.is_npr_winner()
