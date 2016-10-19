@@ -80,7 +80,7 @@ RACE_META_SELECTIONS = [
     models.RaceMeta.current_party
 ]
 
-ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Trump', 'Johnson', 'Stein', 'Clinton', 'McMullin']
+ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Clinton', 'Johnson', 'Stein', 'Trump', 'McMullin']
 
 SELECTIONS_LOOKUP = {
     'president': PRESIDENTIAL_STATE_SELECTIONS,
@@ -141,8 +141,6 @@ def render_top_level_numbers():
         'house_bop': house_bop
     }
 
-    print(data)
-
     _write_json_file(data, 'top-level-results.json')
 
 @task
@@ -188,7 +186,7 @@ def render_house_results():
 def render_senate_results():
     results = _select_senate_results()
 
-    serialized_results = _serialize_results(results, SENATE_SELECTIONS, determine_pickup=True)
+    serialized_results = _serialize_results(results, SENATE_SELECTIONS)
     _write_json_file(serialized_results, 'senate-national.json')
 
 @task
@@ -372,12 +370,12 @@ def _write_json_file(serialized_results, filename):
     with open('{0}/{1}'.format(app_config.DATA_OUTPUT_FOLDER, filename), 'w') as f:
         json.dump(serialized_results, f, use_decimal=True, cls=utils.APDatetimeEncoder)
 
-
 @task
 def render_all():
     shutil.rmtree('{0}'.format(app_config.DATA_OUTPUT_FOLDER))
     os.makedirs('{0}'.format(app_config.DATA_OUTPUT_FOLDER))
 
+    render_top_level_numbers()
     render_presidential_state_results()
     render_presidential_county_results()
     render_senate_results()

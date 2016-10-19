@@ -246,7 +246,7 @@ def configure_targets(deployment_target):
         LOG_LEVEL = logging.DEBUG
         DEBUG = True
         ASSETS_MAX_AGE = 20
-        NEXT_ELECTION_DATE = '2012-11-06'
+        NEXT_ELECTION_DATE = '2016-11-08'
         FAST_ELEX_FLAGS = '--national-only --results-level state'
         SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
         ELEX_DISTRICTS_FLAGS = '-d tests/data/test_districts.json -o csv'
