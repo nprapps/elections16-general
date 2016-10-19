@@ -71,7 +71,8 @@ CALLS_SELECTIONS = [
 
 RACE_META_SELECTIONS = [
     models.RaceMeta.poll_closing,
-    models.RaceMeta.first_results
+    models.RaceMeta.first_results,
+    models.RaceMeta.current_party
 ]
 
 ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Obama', 'Johnson', 'Stein', 'Romney', 'McMullin']
@@ -247,6 +248,10 @@ def _determine_winner(result, electoral_totals={}):
         if result['officename'] == 'President':
             if not (result['level'] == 'state' and (result['statename'] == 'Maine' or result['statename'] == 'Nebraska')):
                 electoral_totals[result['party']] += int(result['electwon'])
+
+        if result['officename'] == 'U.S. Senate' or result['officename'] == 'U.S. House':
+            if result['party'] != result['meta']['current_party']:
+                result['pickup'] = True
 
 def _set_electoral_counts(result, electoral_totals):
     party = result['party']
