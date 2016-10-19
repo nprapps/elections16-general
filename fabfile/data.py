@@ -108,8 +108,6 @@ def load_results(mode):
             print("ERROR GETTING MAIN RESULTS")
             print(first_cmd_output.stderr)
         
-    print('results loaded', )
-
 @task
 def create_calls():
     """
@@ -153,13 +151,9 @@ def create_race_meta():
             house_row = list(filter(lambda x: x['seat'] == seat, house_sheet))[0]
             meta_obj['current_party'] = house_row['party']
 
-            print(meta_obj)
-
         if result.level == 'state' and result.officename == 'U.S. Senate':
             senate_row = list(filter(lambda x: x['state'] == result.statepostal, senate_sheet))[0]
             meta_obj['current_party'] = senate_row['party']
-
-            print(meta_obj)
 
         models.RaceMeta.create(**meta_obj)
 

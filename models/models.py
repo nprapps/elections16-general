@@ -69,6 +69,18 @@ class Result(BaseModel):
     votepct = DecimalField(null=True)
     winner = BooleanField(null=True)
 
+    def is_npr_winner(self):
+        if (self.winner and self.call[0].accept_ap) or self.call[0].override_winner:
+            return True
+        else:
+            return False
+
+    def is_pickup(self):
+        if self.is_npr_winner() and self.party != self.meta[0].current_party:
+            return True
+        else:
+            return False
+
 
 class Call(BaseModel):
     call_id = ForeignKeyField(Result, related_name='call')

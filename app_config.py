@@ -222,11 +222,6 @@ def configure_targets(deployment_target):
         LOG_LEVEL = logging.WARNING
         DEBUG = False
         ASSETS_MAX_AGE = 86400
-        NEXT_ELECTION_DATE = '2012-11-06'
-        FAST_ELEX_FLAGS = '--national-only --results-level state'
-        SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
-        ELEX_DISTRICTS_FLAGS = '--results-level district --raceids 0'
-        ELEX_INIT_FLAGS = '--national-only --results-level ru'
         LOAD_RESULTS_INTERVAL = 10
         ELEX_OUTPUT_FOLDER = '.data'
     elif deployment_target == 'staging':
@@ -239,11 +234,6 @@ def configure_targets(deployment_target):
         LOG_LEVEL = logging.DEBUG
         DEBUG = True
         ASSETS_MAX_AGE = 20
-        NEXT_ELECTION_DATE = '2012-11-06'
-        FAST_ELEX_FLAGS = '--national-only --results-level state'
-        SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
-        ELEX_DISTRICTS_FLAGS = '--results-level district --raceids 0'
-        ELEX_INIT_FLAGS = '--national-only --results-level ru'
         LOAD_RESULTS_INTERVAL = 10
         ELEX_OUTPUT_FOLDER = '.data'
     elif deployment_target == 'test':
@@ -275,11 +265,6 @@ def configure_targets(deployment_target):
         LOG_LEVEL = logging.DEBUG
         DEBUG = True
         ASSETS_MAX_AGE = 20
-        NEXT_ELECTION_DATE = '2012-11-06'
-        FAST_ELEX_FLAGS = '--national-only --results-level state'
-        SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
-        ELEX_DISTRICTS_FLAGS = '--results-level district --raceids 0'
-        ELEX_INIT_FLAGS = '--national-only --results-level ru'
         LOAD_RESULTS_INTERVAL = 10
         ELEX_OUTPUT_FOLDER = '.data'
 
