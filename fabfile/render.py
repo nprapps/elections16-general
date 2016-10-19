@@ -92,8 +92,6 @@ SELECTIONS_LOOKUP = {
 
 @task
 def render_top_level_numbers():
-    ACCEPTED_PARTIES = ['Dem', 'GOP']
-
     # init with parties that already have seats
     senate_bop = {
         'Dem': {
@@ -132,24 +130,10 @@ def render_top_level_numbers():
     electoral_totals = _calculate_electoral_votes(presidential_results)
 
     for result in senate_results:
-        party = result.party if result.party in ACCEPTED_PARTIES else 'Other'
-
-        if result.is_npr_winner():
-            senate_bop[party]['seats'] += 1
-
-        if result.is_pickup():
-            senate_bop[party]['pickups'] += 1
-            senate_bop[result.meta[0].current_party]['pickups'] -= 1
+        _calculate_bop(result, senate_bop)
 
     for result in house_results:
-        party = result.party if result.party in ACCEPTED_PARTIES else 'Other'
-
-        if result.is_npr_winner():
-            house_bop[party]['seats'] += 1
-
-        if result.is_pickup():
-            house_bop[party]['pickups'] += 1
-            house_bop[result.meta[0].current_party]['pickups'] -= 1
+        _calculate_bop(result, house_bop)
 
     data = {
         'electoral_college': electoral_totals,
@@ -370,6 +354,19 @@ def _calculate_electoral_votes(results):
                 electoral_totals[result.party] += result.electtotal
 
     return electoral_totals
+
+def _calculate_bop(result, bop):
+    ACCEPTED_PARTIES = ['Dem', 'GOP']
+
+    party = result.party if result.party in ACCEPTED_PARTIES else 'Other'
+    if result.is_npr_winner():
+        bop[party]['seats'] += 1
+
+    if result.is_pickup():
+        bop[party]['pickups'] += 1
+        bop[result.meta[0].current_party]['pickups'] -= 1
+
+
 
 def _write_json_file(serialized_results, filename):
     with open('{0}/{1}'.format(app_config.DATA_OUTPUT_FOLDER, filename), 'w') as f:
