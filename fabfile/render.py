@@ -96,13 +96,9 @@ def render_top_level_numbers():
     senate_results = _select_senate_results()
     house_results = _select_all_house_results()
 
-    electoral_totals = {
-        'Dem': 0,
-        'GOP': 0,
-        'Ind': 0,
-        'Lib': 0,
-        'Grn': 0
-    }
+    electoral_totals = {}
+
+    ACCEPTED_PARTIES = ['Dem', 'GOP']
 
     # init with parties that already have seats
     senate_bop = {
@@ -114,13 +110,26 @@ def render_top_level_numbers():
             'seats': 30,
             'pickups': 0
         },
-        'Ind': {
+        'Other': {
             'seats': 2,
             'pickups': 0
         }
     }
 
-    house_bop = {}
+    house_bop = {
+        'Dem': {
+            'seats': 0,
+            'pickups': 0
+        },
+        'GOP': {
+            'seats': 0,
+            'pickups': 0
+        },
+        'Other': {
+            'seats': 0,
+            'pickups': 0
+        }
+    }
 
     for result in presidential_results:
         if result.is_npr_winner():
@@ -128,48 +137,26 @@ def render_top_level_numbers():
                 if not electoral_totals.get(result.party):
                     electoral_totals[result.party] = 0
 
-                print(result.last, result.statename, result.electtotal)
                 electoral_totals[result.party] += result.electtotal
 
     for result in senate_results:
+        party = result.party if result.party in ACCEPTED_PARTIES else 'Other'
+
         if result.is_npr_winner():
+            senate_bop[party]['seats'] += 1
 
-
-            if not senate_bop.get(result.party):
-                senate_bop[result.party] = {
-                    'seats': 0,
-                    'pickups': 0
-                }
-
-
-            senate_bop[result.party]['seats'] += 1
         if result.is_pickup():
-            if not senate_bop.get(result.meta[0].current_party):
-                senate_bop[result.meta[0].current_party] = {
-                    'seats': 0,
-                    'pickups': 0
-                }
-
-            senate_bop[result.party]['pickups'] += 1
+            senate_bop[party]['pickups'] += 1
             senate_bop[result.meta[0].current_party]['pickups'] -= 1
 
     for result in house_results:
+        party = result.party if result.party in ACCEPTED_PARTIES else 'Other'
+
         if result.is_npr_winner():
-            if not house_bop.get(result.party):
-                house_bop[result.party] = {
-                    'seats': 0,
-                    'pickups': 0
-                }
+            house_bop[party]['seats'] += 1
 
-            house_bop[result.party]['seats'] += 1
         if result.is_pickup():
-            if not house_bop.get(result.meta[0].current_party):
-                house_bop[result.meta[0].current_party] = {
-                    'seats': 0,
-                    'pickups': 0
-                }
-
-            house_bop[result.party]['pickups'] += 1
+            house_bop[party]['pickups'] += 1
             house_bop[result.meta[0].current_party]['pickups'] -= 1
 
     data = {
@@ -177,6 +164,8 @@ def render_top_level_numbers():
         'senate_bop': senate_bop,
         'house_bop': house_bop
     }
+
+    print(data)
 
     _write_json_file(data, 'top-level-results.json')
 
@@ -413,6 +402,7 @@ def render_all():
 
 @task
 def render_all_national():
+    render_top_level_numbers()
     render_presidential_state_results()
     render_senate_results()
     render_governor_results()
@@ -422,5 +412,6 @@ def render_all_national():
 
 @task
 def render_presidential_files():
+    render_top_level_numbers()
     render_presidential_state_results()
     render_presidential_county_results()
