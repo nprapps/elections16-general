@@ -190,6 +190,14 @@ def configure_targets(deployment_target):
     global LOG_LEVEL
     global ASSETS_MAX_AGE
     global database
+    global NEXT_ELECTION_DATE
+    global FAST_ELEX_FLAGS
+    global SLOW_ELEX_FLAGS
+    global ELEX_INIT_FLAGS
+    global ELEX_DISTRICTS_FLAGS
+    global LOAD_RESULTS_INTERVAL
+    global ELEX_OUTPUT_FOLDER
+
 
     secrets = get_secrets()
 
@@ -214,6 +222,13 @@ def configure_targets(deployment_target):
         LOG_LEVEL = logging.WARNING
         DEBUG = False
         ASSETS_MAX_AGE = 86400
+        NEXT_ELECTION_DATE = '2012-11-06'
+        FAST_ELEX_FLAGS = '--national-only --results-level state'
+        SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
+        ELEX_DISTRICTS_FLAGS = '--results-level district --raceids 0'
+        ELEX_INIT_FLAGS = '--national-only --results-level ru'
+        LOAD_RESULTS_INTERVAL = 10
+        ELEX_OUTPUT_FOLDER = '.data'
     elif deployment_target == 'staging':
         S3_BUCKET = STAGING_S3_BUCKET
         S3_BASE_URL = 'http://%s/%s' % (S3_BUCKET, PROJECT_SLUG)
@@ -224,6 +239,32 @@ def configure_targets(deployment_target):
         LOG_LEVEL = logging.DEBUG
         DEBUG = True
         ASSETS_MAX_AGE = 20
+        NEXT_ELECTION_DATE = '2012-11-06'
+        FAST_ELEX_FLAGS = '--national-only --results-level state'
+        SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
+        ELEX_DISTRICTS_FLAGS = '--results-level district --raceids 0'
+        ELEX_INIT_FLAGS = '--national-only --results-level ru'
+        LOAD_RESULTS_INTERVAL = 10
+        ELEX_OUTPUT_FOLDER = '.data'
+    elif deployment_target == 'test':
+        S3_BUCKET = STAGING_S3_BUCKET
+        S3_BASE_URL = 'http://%s/%s' % (S3_BUCKET, PROJECT_SLUG)
+        S3_DEPLOY_URL = 's3://%s/%s' % (S3_BUCKET, PROJECT_SLUG)
+        SERVERS = STAGING_SERVERS
+        SERVER_BASE_URL = 'http://%s/%s' % (SERVERS[0], PROJECT_SLUG)
+        SERVER_LOG_PATH = '/var/log/%s' % PROJECT_FILENAME
+        LOG_LEVEL = logging.DEBUG
+        DEBUG = True
+        ASSETS_MAX_AGE = 20
+        NEXT_ELECTION_DATE = '2012-11-06'
+        FAST_ELEX_FLAGS = '--national-only --results-level state'
+        SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
+        ELEX_DISTRICTS_FLAGS = '-d tests/data/test_districts.json -o csv'
+        ELEX_INIT_FLAGS = '-d tests/data/test.json -o csv'
+        LOAD_RESULTS_INTERVAL = 10
+        ELEX_OUTPUT_FOLDER = '.testdata'
+        database['PGDATABASE'] = '{0}_test'.format(database['PGDATABASE'])
+        database['PGUSER'] = '{0}_test'.format(database['PGUSER'])
     else:
         S3_BUCKET = None
         S3_BASE_URL = 'http://127.0.0.1:8000'
@@ -234,6 +275,13 @@ def configure_targets(deployment_target):
         LOG_LEVEL = logging.DEBUG
         DEBUG = True
         ASSETS_MAX_AGE = 20
+        NEXT_ELECTION_DATE = '2012-11-06'
+        FAST_ELEX_FLAGS = '--national-only --results-level state'
+        SLOW_ELEX_FLAGS = '--national-only --results-level ru --raceids 0'
+        ELEX_DISTRICTS_FLAGS = '--results-level district --raceids 0'
+        ELEX_INIT_FLAGS = '--national-only --results-level ru'
+        LOAD_RESULTS_INTERVAL = 10
+        ELEX_OUTPUT_FOLDER = '.data'
 
     DEPLOYMENT_TARGET = deployment_target
 

@@ -80,22 +80,14 @@ ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Obama', 'Johnson', 'Stein', 'Romney', 'McMu
 
 @task
 def render_presidential_state_results():
-    results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
-        (models.Result.level == 'state') | (models.Result.level == 'district'),
-        models.Result.officename == 'President',
-        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
-    ).dicts()
-    
+    results = _select_presidential_state_results()
+
     electoral_totals = {}
     serialized_results = _serialize_results(results, electoral_totals=electoral_totals)
 
     # now that we have correct electoral counts, get the national results
     # this sucks
-    national_results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
-        models.Result.level == 'national',
-        models.Result.officename == 'President',
-        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
-    ).dicts()
+    national_results = _select_presidential_national_results()
 
     national_serialized_results = _serialize_results(national_results, determine_winner=False, electoral_totals=electoral_totals, is_national_results=True)
 
@@ -108,55 +100,35 @@ def render_presidential_county_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
     for state in states:
-        results = models.Result.select(*PRESIDENTIAL_COUNTY_SELECTIONS).where(
-            (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district'),
-            models.Result.officename == 'President',
-            models.Result.statepostal == state.statepostal,
-            models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
-        ).dicts()
-
+        results = _select_presidential_county_results(state.statepostal)
         serialized_results = _serialize_results(results, key='fipscode', apply_backrefs=False, determine_winner=False)
-
         filename = 'presidential-{0}-counties.json'.format(state.statepostal.lower())
         _write_json_file(serialized_results, filename)
 
 @task
 def render_governor_results():
-    results = models.Result.select(*GOVERNOR_SELECTIONS).where(
-        models.Result.level == 'state',
-        models.Result.officename == 'Governor'
-    ).dicts()
+    results = _select_governor_results()
 
     serialized_results = _serialize_results(results)
     _write_json_file(serialized_results, 'governor-national.json')
 
 @task
 def render_house_results():
-    results = models.Result.select(*HOUSE_SELECTIONS).where(
-        models.Result.level == 'state',
-        models.Result.officename == 'U.S. House',
-        models.Result.raceid << app_config.SELECTED_HOUSE_RACES
-    ).dicts()
+    results = _select_house_results()
 
     serialized_results = _serialize_results(results, key='raceid')
     _write_json_file(serialized_results, 'house-national.json')
 
 @task
 def render_senate_results():
-    results = models.Result.select(*SENATE_SELECTIONS).where(
-        models.Result.level == 'state',
-        models.Result.officename == 'U.S. Senate'
-    ).dicts()
+    results = _select_senate_results()
 
     serialized_results = _serialize_results(results)
     _write_json_file(serialized_results, 'senate-national.json')
 
 @task
 def render_ballot_measure_results():
-    results = models.Result.select(*BALLOT_MEASURE_SELECTIONS).where(
-        models.Result.level == 'state',
-        models.Result.is_ballot_measure == True
-    ).dicts()
+    results = _select_ballot_measure_results()
 
     serialized_results = _serialize_results(results)
     _write_json_file(serialized_results, 'ballot-measures-national.json')
@@ -224,6 +196,68 @@ def _serialize_results(results, key='statepostal', apply_backrefs=True, determin
         serialized_results[result[key]].append(result)
 
     return serialized_results
+
+
+def _select_presidential_state_results():
+    results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
+        (models.Result.level == 'state') | (models.Result.level == 'district'),
+        models.Result.officename == 'President',
+        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
+    ).dicts()
+
+    return results
+
+def _select_presidential_national_results():
+    results = models.Result.select(*PRESIDENTIAL_STATE_SELECTIONS).where(
+        models.Result.level == 'national',
+        models.Result.officename == 'President',
+        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
+    ).dicts()
+
+    return results
+
+def _select_presidential_county_results(statepostal):
+    results = models.Result.select(*PRESIDENTIAL_COUNTY_SELECTIONS).where(
+        (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district'),
+        models.Result.officename == 'President',
+        models.Result.statepostal == statepostal,
+        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
+    ).dicts()
+
+    return results
+
+def _select_governor_results():
+    results = models.Result.select(*GOVERNOR_SELECTIONS).where(
+        models.Result.level == 'state',
+        models.Result.officename == 'Governor'
+    ).dicts()
+
+    return results
+
+def _select_house_results():
+    results = models.Result.select(*HOUSE_SELECTIONS).where(
+        models.Result.level == 'state',
+        models.Result.officename == 'U.S. House',
+        models.Result.raceid << app_config.SELECTED_HOUSE_RACES
+    ).dicts()
+
+    return results
+
+def _select_senate_results():
+    results = models.Result.select(*SENATE_SELECTIONS).where(
+        models.Result.level == 'state',
+        models.Result.officename == 'U.S. Senate'
+    ).dicts()
+
+    return results
+
+def _select_ballot_measure_results():
+    results = models.Result.select(*BALLOT_MEASURE_SELECTIONS).where(
+        models.Result.level == 'state',
+        models.Result.is_ballot_measure == True
+    ).dicts()
+
+    return results
 
 def _write_json_file(serialized_results, filename):
     with open('{0}/{1}'.format(app_config.DATA_OUTPUT_FOLDER, filename), 'w') as f:

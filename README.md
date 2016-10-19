@@ -316,11 +316,6 @@ Run Python tests
 
 Python unit tests are stored in the ``tests`` directory. Run them with ``fab tests``.
 
-Run Javascript tests
---------------------
-
-With the project running, visit [localhost:8000/test/SpecRunner.html](http://localhost:8000/test/SpecRunner.html).
-
 Compile static assets
 ---------------------
 
