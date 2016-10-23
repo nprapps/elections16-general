@@ -26,6 +26,7 @@ COMMON_SELECTIONS = [
     models.Result.precinctsreporting,
     models.Result.precinctsreportingpct,
     models.Result.precinctstotal,
+    models.Result.raceid,
     models.Result.statename,
     models.Result.statepostal,
     models.Result.votepct,
@@ -46,7 +47,6 @@ PRESIDENTIAL_COUNTY_SELECTIONS = COMMON_SELECTIONS + [
 HOUSE_SELECTIONS = COMMON_SELECTIONS + [
     models.Result.incumbent,
     models.Result.runoff,
-    models.Result.raceid,
     models.Result.seatname,
     models.Result.seatnum,
     models.Result.meta
@@ -409,7 +409,7 @@ def render_all():
     render_governor_results()
     render_ballot_measure_results()
     render_house_results()
-    # render_state_results()
+    render_state_results()
 
 @task
 def render_all_national():
