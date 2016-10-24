@@ -7,11 +7,16 @@ import app_config
 import copytext
 import csv
 import yaml
+import requests
 
 from oauth import get_document
 from fabric.api import execute, hide, local, task, settings, shell_env
 from fabric.state import env
 from models import models
+
+CENSUS_REPORTER_URL = 'http://api.censusreporter.org/1.0/data/show/acs2014_5yr'
+FIPS_TEMPLATE = '05000US{0}'
+CENSUS_TABLES = ['B01001', 'B02001', 'B23006', 'B01003', 'B99211', 'B05001', 'B99181', 'B23025']
 
 @task
 def bootstrap_db():
@@ -50,6 +55,7 @@ def create_tables():
     models.Result.create_table()
     models.Call.create_table()
     models.RaceMeta.create_table()
+    models.CensusData.create_table()
 
 @task
 def delete_results(mode):
@@ -105,7 +111,7 @@ def load_results(mode):
         else:
             print("ERROR GETTING MAIN RESULTS")
             print(first_cmd_output.stderr)
-        
+
 
 @task
 def create_calls():
@@ -163,11 +169,11 @@ def build_current_congress():
 
     house_fieldnames = ['first', 'last', 'party', 'state', 'district']
     senate_fieldnames = ['first', 'last', 'party', 'state']
-    
+
     with open('data/house-seats.csv', 'w') as f:
         house_writer = csv.DictWriter(f, fieldnames=house_fieldnames)
         house_writer.writeheader()
-        
+
         with open('data/senate-seats.csv', 'w') as f:
             senate_writer = csv.DictWriter(f, fieldnames=senate_fieldnames)
             senate_writer.writeheader()
@@ -193,3 +199,29 @@ def build_current_congress():
                         senate_writer.writerow(obj)
                     elif current_term['type'] == 'rep':
                         house_writer.writerow(obj)
+
+
+@task
+def get_census_data():
+    with open('data/fipscodes.csv') as f:
+        fips_reader = csv.DictReader(f)
+        for row in fips_reader:
+            save_census_row(row['fipscode'])
+            break
+
+
+@task
+def save_census_row():
+    fipscodes = models.Result.select(models.Result.fipscode, models.Result.id).where(
+        models.Result.officename == 'President'
+    )
+    for fipscode in fipscodes:
+        if fipscode.fipscode:
+            print(fipscode.fipscode)
+            geo_id = FIPS_TEMPLATE.format(fipscode.fipscode)
+            params = {
+                'geo_ids': geo_id,
+                'table_ids': ','.join(CENSUS_TABLES)
+            }
+            response = requests.get(CENSUS_REPORTER_URL, params=params)
+            models.CensusData.create(fipscode=fipscode.fipscode, data=response.json(), census_id=fipscode.id)

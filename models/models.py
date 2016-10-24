@@ -3,6 +3,7 @@ import app_config
 from peewee import Model, PostgresqlDatabase
 from peewee import BooleanField, CharField, DateField, DateTimeField, DecimalField, ForeignKeyField, IntegerField
 from slugify import slugify
+from playhouse.postgres_ext import JSONField
 
 db = PostgresqlDatabase(
     app_config.database['PGDATABASE'],
@@ -74,3 +75,9 @@ class RaceMeta(BaseModel):
     result_id = ForeignKeyField(Result, related_name='meta')
     poll_closing = CharField(null=True)
     first_results = CharField(null=True)
+
+
+class CensusData(BaseModel):
+    fipscode = CharField()
+    census_id = ForeignKeyField(Result, related_name='census')
+    data = JSONField()
