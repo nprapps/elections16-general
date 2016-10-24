@@ -239,6 +239,12 @@ def render_presidential_county_results():
         _write_json_file(serialized_results, filename)
 
 @task
+def render_presidential_big_board():
+    results = _select_presidential_state_results()
+    serialized_results = _serialize_for_big_board(results, PRESIDENTIAL_STATE_SELECTIONS, key='statepostal')
+    _write_json_file(serialized_results, 'presidential-big-board.json')
+
+@task
 def render_governor_results():
     results = _select_governor_results()
 
@@ -313,7 +319,7 @@ def render_state_results():
 uncallable_levels = ['county', 'township']
 pickup_offices = ['U.S. House', 'U.S. Senate']
 
-def _serialize_for_big_board(results, selections):
+def _serialize_for_big_board(results, selections, key='raceid'):
     serialized_results = {}
 
     for result in results:
@@ -328,10 +334,10 @@ def _serialize_for_big_board(results, selections):
             serialized_results[result.meta[0].first_results] = {}
         
         time_bucket = serialized_results[result.meta[0].first_results]
-        if not time_bucket.get(result.raceid):
-            time_bucket[result.raceid] = []
+        if not time_bucket.get(result_dict[key]):
+            time_bucket[result_dict[key]] = []
 
-        time_bucket[result.raceid].append(result_dict)
+        time_bucket[result_dict[key]].append(result_dict)
 
     return serialized_results
 
@@ -405,6 +411,7 @@ def render_all():
     render_top_level_numbers()
     render_presidential_state_results()
     render_presidential_county_results()
+    render_presidential_big_board()
     render_senate_results()
     render_governor_results()
     render_ballot_measure_results()
@@ -415,6 +422,7 @@ def render_all():
 def render_all_national():
     render_top_level_numbers()
     render_presidential_state_results()
+    render_presidential_big_board()
     render_senate_results()
     render_governor_results()
     render_ballot_measure_results()
@@ -426,3 +434,4 @@ def render_presidential_files():
     render_top_level_numbers()
     render_presidential_state_results()
     render_presidential_county_results()
+    render_presidential_big_board()
