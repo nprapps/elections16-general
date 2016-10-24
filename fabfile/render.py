@@ -66,6 +66,7 @@ GOVERNOR_SELECTIONS = COMMON_SELECTIONS + [
 BALLOT_MEASURE_SELECTIONS = COMMON_SELECTIONS + [
     models.Result.officename,
     models.Result.seatname,
+    models.Result.is_ballot_measure,
     models.Result.meta
 ]
 
