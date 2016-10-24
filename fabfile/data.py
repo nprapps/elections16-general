@@ -87,22 +87,24 @@ def load_results(mode):
 
     election_date = app_config.NEXT_ELECTION_DATE
     with hide('output', 'running'):
-        local('mkdir -p .data')
+        local('mkdir -p {0}'.format(app_config.ELEX_OUTPUT_FOLDER))
 
-    cmd = 'elex results {0} {1} > .data/first_query.csv'.format(election_date, flags)
-    districts_cmd = 'elex results {0} {1} | csvgrep -c level -m district > .data/districts.csv'.format(election_date, app_config.ELEX_DISTRICTS_FLAGS)
+    cmd = 'elex results {0} {1} > {2}/first_query.csv'.format(election_date, flags, app_config.ELEX_OUTPUT_FOLDER)
+    districts_cmd = 'elex results {0} {1} | csvgrep -c level -m district > {2}/districts.csv'.format(election_date, app_config.ELEX_DISTRICTS_FLAGS, app_config.ELEX_OUTPUT_FOLDER)
 
 
     with shell_env(**app_config.database):
-        first_cmd_output = local(cmd, capture=True)
+        with settings(warn_only=True), hide('output', 'running'):
+            first_cmd_output = local(cmd, capture=True)
 
         if first_cmd_output.succeeded:
-            district_cmd_output = local(districts_cmd, capture=True)
+            with hide('output', 'running'):
+                district_cmd_output = local(districts_cmd, capture=True)
 
             if district_cmd_output.succeeded:
                 delete_results(mode)
                 with hide('output', 'running'):
-                    local('csvstack .data/first_query.csv .data/districts.csv | psql {0} -c "COPY result FROM stdin DELIMITER \',\' CSV HEADER;"'.format(app_config.database['PGDATABASE']))
+                    local('csvstack {0}/first_query.csv {1}/districts.csv | psql {2} -c "COPY result FROM stdin DELIMITER \',\' CSV HEADER;"'.format(app_config.ELEX_OUTPUT_FOLDER, app_config.ELEX_OUTPUT_FOLDER, app_config.database['PGDATABASE']))
 
             else:
                 print("ERROR GETTING DISTRICT RESULTS")
@@ -132,21 +134,35 @@ def create_race_meta():
     models.RaceMeta.delete().execute()
 
     calendar = copytext.Copy(app_config.CALENDAR_PATH)
-    calendar_sheet = calendar['polls']
+    calendar_sheet = calendar['poll_times']
+    senate_sheet = calendar['senate_seats']
+    house_sheet = calendar['house_seats']
 
-    for row in calendar_sheet:
-        results = models.Result.select().where(
-            (models.Result.level == 'state') | (models.Result.level == 'district'),
-            models.Result.statepostal == row['key'],
-        )
+    results = models.Result.select()
+    for result in results:
+        meta_obj = {
+            'result_id': result.id
+        }
 
-        for result in results:
-            models.RaceMeta.create(
-                result_id=result.id,
-                poll_closing=row['time_est'],
-                first_results=row['first_results_est']
-            )
+        if result.level == 'county' or result.level == 'township':
+            continue
 
+        if result.level == 'state' or result.level == 'district':
+            calendar_row = list(filter(lambda x: x['key'] == result.statepostal, calendar_sheet))[0]
+
+            meta_obj['poll_closing'] = calendar_row['time_est']
+            meta_obj['first_results'] = calendar_row['first_results_est']
+
+        if result.level == 'state' and result.officename == 'U.S. House':
+            seat = '{0}-{1}'.format(result.statepostal, result.seatnum)
+            house_row = list(filter(lambda x: x['seat'] == seat, house_sheet))[0]
+            meta_obj['current_party'] = house_row['party']
+
+        if result.level == 'state' and result.officename == 'U.S. Senate':
+            senate_row = list(filter(lambda x: x['state'] == result.statepostal, senate_sheet))[0]
+            meta_obj['current_party'] = senate_row['party']
+
+        models.RaceMeta.create(**meta_obj)
 
 @task
 def copy_data_for_graphics():
@@ -167,38 +183,36 @@ def build_current_congress():
         'Independent': 'Ind'
     }
 
-    house_fieldnames = ['first', 'last', 'party', 'state', 'district']
+    house_fieldnames = ['first', 'last', 'party', 'state', 'seat']
     senate_fieldnames = ['first', 'last', 'party', 'state']
-
-    with open('data/house-seats.csv', 'w') as f:
-        house_writer = csv.DictWriter(f, fieldnames=house_fieldnames)
+    with open('data/house-seats.csv', 'w') as h, open('data/senate-seats.csv', 'w') as s:
+        house_writer = csv.DictWriter(h, fieldnames=house_fieldnames)
         house_writer.writeheader()
 
-        with open('data/senate-seats.csv', 'w') as f:
-            senate_writer = csv.DictWriter(f, fieldnames=senate_fieldnames)
-            senate_writer.writeheader()
+        senate_writer = csv.DictWriter(s, fieldnames=senate_fieldnames)
+        senate_writer.writeheader()
 
-            with open('etc/legislators-current.yaml') as f:
-                data = yaml.load(f)
+        with open('etc/legislators-current.yaml') as f:
+            data = yaml.load(f)
 
-            for legislator in data:
-                current_term = legislator['terms'][-1]
+        for legislator in data:
+            current_term = legislator['terms'][-1]
 
-                if current_term['end'][:4] == '2017':
-                    obj = {
-                        'first': legislator['name']['first'],
-                        'last': legislator['name']['last'],
-                        'state': current_term['state'],
-                        'party': party_dict[current_term['party']]
-                    }
+            if current_term['end'][:4] == '2017':
+                obj = {
+                    'first': legislator['name']['first'],
+                    'last': legislator['name']['last'],
+                    'state': current_term['state'],
+                    'party': party_dict[current_term['party']]
+                }
 
-                    if current_term.get('district'):
-                        obj['district'] = current_term['district']
+                if current_term.get('district'):
+                    obj['seat'] = '{0}-{1}'.format(current_term['state'], current_term['district'])
 
-                    if current_term['type'] == 'sen':
-                        senate_writer.writerow(obj)
-                    elif current_term['type'] == 'rep':
-                        house_writer.writerow(obj)
+                if current_term['type'] == 'sen':
+                    senate_writer.writerow(obj)
+                elif current_term['type'] == 'rep':
+                    house_writer.writerow(obj)
 
 
 @task
@@ -212,9 +226,7 @@ def get_census_data():
 
 @task
 def save_census_row():
-    fipscodes = models.Result.select(models.Result.fipscode, models.Result.id).where(
-        models.Result.officename == 'President'
-    )
+    fipscodes = models.Result.select(models.Result.fipscode).distinct().order_by(models.Result.fipscode)
     for fipscode in fipscodes:
         if fipscode.fipscode:
             print(fipscode.fipscode)
@@ -223,5 +235,14 @@ def save_census_row():
                 'geo_ids': geo_id,
                 'table_ids': ','.join(CENSUS_TABLES)
             }
-            response = requests.get(CENSUS_REPORTER_URL, params=params)
-            models.CensusData.create(fipscode=fipscode.fipscode, data=response.json(), census_id=fipscode.id)
+            try:
+                response = requests.get(CENSUS_REPORTER_URL, params=params)
+            except:
+                print('fipscode failed:', fipscode.fipscode)
+                continue
+            results = models.Result.select(models.Result.id).where(
+                models.Result.fipscode == fipscode.fipscode,
+                models.Result.officename == 'President'
+            )
+            for result in results:
+                models.CensusData.create(fipscode=fipscode.fipscode, data=response.json(), census_id=result.id)

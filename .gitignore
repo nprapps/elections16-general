@@ -16,6 +16,7 @@ develop-eggs
 node_modules
 .data
 .rendered
+.testdata
 
 # Installer logs
 pip-log.txt
