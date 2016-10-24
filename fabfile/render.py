@@ -196,7 +196,7 @@ def render_top_level_numbers():
     presidential_results = _select_presidential_state_results()
     senate_results = _select_senate_results()
     house_results = _select_all_house_results()
-    
+
     electoral_totals = _calculate_electoral_votes(presidential_results)
 
     for result in senate_results:
@@ -326,7 +326,7 @@ def _serialize_for_big_board(results, selections):
 
         if not serialized_results.get(result.meta[0].first_results):
             serialized_results[result.meta[0].first_results] = {}
-        
+
         time_bucket = serialized_results[result.meta[0].first_results]
         if not time_bucket.get(result.raceid):
             time_bucket[result.raceid] = []
@@ -338,7 +338,7 @@ def _serialize_for_big_board(results, selections):
 
 def _serialize_by_key(results, selections, key):
     serialized_results = {}
-    
+
     for result in results:
         result_dict = model_to_dict(result, backrefs=True, only=selections)
 
@@ -347,6 +347,9 @@ def _serialize_by_key(results, selections, key):
 
         if result.level not in uncallable_levels:
             _set_meta(result, result_dict)
+
+        else:
+            _set_unemployment(result, result_dict)
 
         if result.officename in pickup_offices:
             _set_pickup(result, result_dict)
@@ -359,6 +362,10 @@ def _set_meta(result, result_dict):
     meta = models.RaceMeta.get(models.RaceMeta.result_id == result.id)
     result_dict['meta'] = model_to_dict(meta, only=RACE_META_SELECTIONS)
     result_dict['npr_winner'] = result.is_npr_winner()
+
+def _set_unemployment(result, result_dict):
+    unemployment = models.UnemploymentData.get(models.UnemploymentData.unemployment_id == result.id)
+    result_dict['unemployment'] = model_to_dict(unemployment)
 
 def _set_pickup(result, result_dict):
     result_dict['pickup'] = result.is_pickup()

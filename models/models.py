@@ -93,3 +93,8 @@ class RaceMeta(BaseModel):
     poll_closing = CharField(null=True)
     first_results = CharField(null=True)
     current_party = CharField(null=True)
+
+class UnemploymentData(BaseModel):
+    fipscode = CharField()
+    unemployment_rate = CharField()
+    unemployment_id = ForeignKeyField(Result, related_name='unemployment')
