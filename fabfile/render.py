@@ -164,32 +164,44 @@ def _select_ballot_measure_results():
 def render_top_level_numbers():
     # init with parties that already have seats
     senate_bop = {
+        'total_seats': 100,
+        'majority': 51,
+        'uncalled_races': 34,
         'Dem': {
             'seats': 34,
-            'pickups': 0
+            'pickups': 0,
+            'needed': 17
         },
         'GOP': {
             'seats': 30,
-            'pickups': 0
+            'pickups': 0,
+            'needed': 21
         },
         'Other': {
             'seats': 2,
-            'pickups': 0
+            'pickups': 0,
+            'needed': 49
         }
     }
 
     house_bop = {
+        'total_seats': 435,
+        'majority': 218,
+        'uncalled_races': 435,
         'Dem': {
             'seats': 0,
-            'pickups': 0
+            'pickups': 0,
+            'needed': 218
         },
         'GOP': {
             'seats': 0,
-            'pickups': 0
+            'pickups': 0,
+            'needed': 218
         },
         'Other': {
             'seats': 0,
-            'pickups': 0
+            'pickups': 0,
+            'needed': 218
         }
     }
 
@@ -392,6 +404,8 @@ def _calculate_bop(result, bop):
     party = result.party if result.party in ACCEPTED_PARTIES else 'Other'
     if result.is_npr_winner():
         bop[party]['seats'] += 1
+        bop[party]['needed'] -= 1
+        bop['uncalled_races'] -= 1
 
     if result.is_pickup():
         bop[party]['pickups'] += 1
