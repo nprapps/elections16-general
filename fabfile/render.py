@@ -83,6 +83,7 @@ RACE_META_SELECTIONS = [
 ]
 
 ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Clinton', 'Johnson', 'Stein', 'Trump', 'McMullin']
+ACCEPTED_COUNTY_CANDIDATES = ['Clinton', 'Trump']
 
 SELECTIONS_LOOKUP = {
     'president': PRESIDENTIAL_STATE_SELECTIONS,
@@ -116,7 +117,7 @@ def _select_presidential_county_results(statepostal):
         (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district'),
         models.Result.officename == 'President',
         models.Result.statepostal == statepostal,
-        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
+        models.Result.last << ACCEPTED_COUNTY_CANDIDATES,
     )
 
     return results
@@ -210,7 +211,7 @@ def render_top_level_numbers():
     presidential_results = _select_presidential_state_results()
     senate_results = _select_senate_results()
     house_results = _select_all_house_results()
-    
+
     electoral_totals = _calculate_electoral_votes(presidential_results)
 
     for result in senate_results:
@@ -346,7 +347,7 @@ def _serialize_for_big_board(results, selections, key='raceid'):
 
         if not serialized_results.get(result.meta[0].first_results):
             serialized_results[result.meta[0].first_results] = {}
-        
+
         # handle district-level presidential results
         if key == 'statepostal' and result.reportingunitname:
             m = re.search(r'\d$', result.reportingunitname)
@@ -368,7 +369,7 @@ def _serialize_for_big_board(results, selections, key='raceid'):
 
 def _serialize_by_key(results, selections, key):
     serialized_results = {}
-    
+
     for result in results:
         result_dict = model_to_dict(result, backrefs=True, only=selections)
 
@@ -377,6 +378,8 @@ def _serialize_by_key(results, selections, key):
 
         if result.level not in uncallable_levels:
             _set_meta(result, result_dict)
+        else:
+            set_2012_result(result, result_dict)
 
         if result.officename in pickup_offices:
             _set_pickup(result, result_dict)
@@ -392,6 +395,22 @@ def _set_meta(result, result_dict):
 
 def _set_pickup(result, result_dict):
     result_dict['pickup'] = result.is_pickup()
+
+def set_2012_result(result, result_dict):
+    try:
+        obama_result = models.TwentyTwelveResult.get(
+            models.TwentyTwelveResult.fipscode == result.fipscode,
+            models.TwentyTwelveResult.last == 'Obama'
+        )
+        romney_result = models.TwentyTwelveResult.get(
+            models.TwentyTwelveResult.fipscode == result.fipscode,
+            models.TwentyTwelveResult.last == 'Romney'
+        )
+        difference = obama_result.votepct - romney_result.votepct
+        print(result.fipscode)
+    except:
+        pass
+
 
 def _calculate_electoral_votes(results):
     electoral_totals = {
