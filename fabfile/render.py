@@ -1,5 +1,6 @@
 import app_config
 import os
+import re
 import shutil
 import simplejson as json
 
@@ -346,11 +347,21 @@ def _serialize_for_big_board(results, selections, key='raceid'):
         if not serialized_results.get(result.meta[0].first_results):
             serialized_results[result.meta[0].first_results] = {}
         
-        time_bucket = serialized_results[result.meta[0].first_results]
-        if not time_bucket.get(result_dict[key]):
-            time_bucket[result_dict[key]] = []
+        # handle district-level presidential results
+        if key == 'statepostal' and result.reportingunitname:
+            m = re.search(r'\d$', result.reportingunitname)
+            if m is not None:
+                dict_key = '{0}-{1}'.format(result.statepostal, m.group())
+            else:
+                dict_key = result.statepostal
+        else:
+            dict_key = result_dict[key]
 
-        time_bucket[result_dict[key]].append(result_dict)
+        time_bucket = serialized_results[result.meta[0].first_results]
+        if not time_bucket.get(dict_key):
+            time_bucket[dict_key] = []
+
+        time_bucket[dict_key].append(result_dict)
 
     return serialized_results
 
