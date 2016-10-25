@@ -17,7 +17,7 @@ from models import models
 def bootstrap_db():
     """
     Build the database.
-    """    
+    """
     create_db()
     create_tables()
     load_results('init')
@@ -50,6 +50,7 @@ def create_tables():
     models.Result.create_table()
     models.Call.create_table()
     models.RaceMeta.create_table()
+    models.TwentyTwelveResult.create_table()
 
 @task
 def delete_results(mode):
@@ -107,7 +108,7 @@ def load_results(mode):
         else:
             print("ERROR GETTING MAIN RESULTS")
             print(first_cmd_output.stderr)
-        
+
 @task
 def create_calls():
     """
@@ -178,11 +179,11 @@ def build_current_congress():
 
     house_fieldnames = ['first', 'last', 'party', 'state', 'seat']
     senate_fieldnames = ['first', 'last', 'party', 'state']
-    
+
     with open('data/house-seats.csv', 'w') as h, open('data/senate-seats.csv', 'w') as s:
         house_writer = csv.DictWriter(h, fieldnames=house_fieldnames)
         house_writer.writeheader()
-        
+
         senate_writer = csv.DictWriter(s, fieldnames=senate_fieldnames)
         senate_writer.writeheader()
 
@@ -207,3 +208,7 @@ def build_current_congress():
                     senate_writer.writerow(obj)
                 elif current_term['type'] == 'rep':
                     house_writer.writerow(obj)
+
+@task
+def save_2012_data():
+    local('psql {0} -c "COPY twentytwelveresult FROM \'`pwd`/data/twentyTwelve.csv\' DELIMITER \',\' CSV HEADER;"'.format(app_config.database['PGDATABASE']))
