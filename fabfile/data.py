@@ -7,6 +7,7 @@ import app_config
 import copytext
 import csv
 import yaml
+import json
 
 from oauth import get_document
 from fabric.api import execute, hide, local, task, settings, shell_env
@@ -17,7 +18,7 @@ from models import models
 def bootstrap_db():
     """
     Build the database.
-    """    
+    """
     create_db()
     create_tables()
     load_results('init')
@@ -107,7 +108,7 @@ def load_results(mode):
         else:
             print("ERROR GETTING MAIN RESULTS")
             print(first_cmd_output.stderr)
-        
+
 @task
 def create_calls():
     """
@@ -178,11 +179,11 @@ def build_current_congress():
 
     house_fieldnames = ['first', 'last', 'party', 'state', 'seat']
     senate_fieldnames = ['first', 'last', 'party', 'state']
-    
+
     with open('data/house-seats.csv', 'w') as h, open('data/senate-seats.csv', 'w') as s:
         house_writer = csv.DictWriter(h, fieldnames=house_fieldnames)
         house_writer.writeheader()
-        
+
         senate_writer = csv.DictWriter(s, fieldnames=senate_fieldnames)
         senate_writer.writeheader()
 
@@ -207,3 +208,45 @@ def build_current_congress():
                     senate_writer.writerow(obj)
                 elif current_term['type'] == 'rep':
                     house_writer.writerow(obj)
+
+
+@task
+def save_old_data():
+    with open('data/unemployment.csv') as f:
+        unemployment_reader = csv.DictReader(f)
+
+        data = []
+
+        for row in unemployment_reader:
+            full_fips = row['State FIPS Code'] + row['County FIPS Code']
+            rate = row['Unemployment Rate (%)']
+            obama_result = 0
+            romney_result = 0
+            winner = ''
+            advantage = 0
+            with open('data/twentyTwelve.csv') as g:
+                twentyTwelve_reader = csv.DictReader(g)
+                for county in twentyTwelve_reader:
+                    if county['fipscode'] == full_fips and county['last'] == 'Obama':
+                        obama_result = county['votepct']
+                    elif county['fipscode'] == full_fips and county['last'] == 'Romney':
+                        romney_result = county['votepct']
+            difference = float(obama_result) - float(romney_result)
+            if difference > 0:
+                winner = 'Obama'
+                advantage = abs(difference)
+            else:
+                winner = 'Romney'
+                advantage = abs(difference)
+
+            this_row = {
+                'fipscode': full_fips,
+                'unemployment': rate,
+                'winner': winner,
+                'winner-advantage': advantage
+            }
+            data.append(this_row)
+            print(full_fips)
+
+        with open('data/fixed-data.json', 'w') as datafile:
+            json.dump(data, datafile)
