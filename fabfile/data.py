@@ -215,7 +215,7 @@ def save_old_data():
     with open('data/unemployment.csv') as f:
         unemployment_reader = csv.DictReader(f)
 
-        data = []
+        data = {}
 
         for row in unemployment_reader:
             full_fips = row['State FIPS Code'] + row['County FIPS Code']
@@ -240,12 +240,11 @@ def save_old_data():
                 advantage = abs(difference)
 
             this_row = {
-                'fipscode': full_fips,
                 'unemployment': rate,
                 'winner': winner,
-                'winner-advantage': advantage
+                'advantage': advantage
             }
-            data.append(this_row)
+            data[full_fips] = this_row
             print(full_fips)
 
         with open('data/fixed-data.json', 'w') as datafile:
