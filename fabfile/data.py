@@ -6,6 +6,7 @@ Commands that update or process the application data.
 import app_config
 import copytext
 import csv
+import simplejson as json
 import yaml
 import requests
 
@@ -13,10 +14,11 @@ from oauth import get_document
 from fabric.api import execute, hide, local, task, settings, shell_env
 from fabric.state import env
 from models import models
+from time import sleep
 
 CENSUS_REPORTER_URL = 'http://api.censusreporter.org/1.0/data/show/acs2014_5yr'
 FIPS_TEMPLATE = '05000US{0}'
-CENSUS_TABLES = ['B01001', 'B02001', 'B23006', 'B01003', 'B99211', 'B05001', 'B99181', 'B23025']
+CENSUS_TABLES = ['B01001', 'B02001', 'B19013', 'B15003']
 
 @task
 def bootstrap_db():
@@ -214,35 +216,39 @@ def build_current_congress():
                 elif current_term['type'] == 'rep':
                     house_writer.writerow(obj)
 
-
 @task
-def get_census_data():
-    with open('data/fipscodes.csv') as f:
-        fips_reader = csv.DictReader(f)
-        for row in fips_reader:
-            save_census_row(row['fipscode'])
-            break
+def get_census_data(start_state='AA'):
+    state_results = models.Result.select(models.Result.statepostal).distinct().order_by(models.Result.statepostal)
 
+    for state_result in state_results:
+        state = state_result.statepostal
 
-@task
-def save_census_row():
-    fipscodes = models.Result.select(models.Result.fipscode).distinct().order_by(models.Result.fipscode)
-    for fipscode in fipscodes:
-        if fipscode.fipscode:
-            print(fipscode.fipscode)
-            geo_id = FIPS_TEMPLATE.format(fipscode.fipscode)
-            params = {
-                'geo_ids': geo_id,
-                'table_ids': ','.join(CENSUS_TABLES)
-            }
-            try:
+        sorts = sorted([start_state, state])
+        
+        if sorts[0] == state:
+            print('skipping', state)
+            continue
+
+        print('getting', state)
+        output = {}
+        fips_results = models.Result.select(models.Result.fipscode).distinct().where(models.Result.statepostal == state).order_by(models.Result.fipscode)
+        for result in fips_results:
+            if result.fipscode:
+                geo_id = FIPS_TEMPLATE.format(result.fipscode)
+                params = {
+                    'geo_ids': geo_id,
+                    'table_ids': ','.join(CENSUS_TABLES)
+                }
                 response = requests.get(CENSUS_REPORTER_URL, params=params)
-            except:
-                print('fipscode failed:', fipscode.fipscode)
-                continue
-            results = models.Result.select(models.Result.id).where(
-                models.Result.fipscode == fipscode.fipscode,
-                models.Result.officename == 'President'
-            )
-            for result in results:
-                models.CensusData.create(fipscode=fipscode.fipscode, data=response.json(), census_id=result.id)
+                if response.status_code == 200:
+                    print('fipscode succeeded', result.fipscode)
+                    output[result.fipscode] = response.json()
+                    sleep(2)
+                else:
+                    print('fipscode failed:', result.fipscode, response.status_code)
+                    sleep(10)
+                    continue
+
+        with open('data/census/{0}.json'.format(state), 'w') as f:
+            json.dump(output, f)
+
