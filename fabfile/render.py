@@ -349,6 +349,9 @@ def _serialize_for_big_board(results, selections, key='raceid'):
         
         # handle district-level presidential results
         if key == 'statepostal' and result.reportingunitname:
+            if result.reportingunitname == 'At Large':
+                continue
+
             m = re.search(r'\d$', result.reportingunitname)
             if m is not None:
                 dict_key = '{0}-{1}'.format(result.statepostal, m.group())
