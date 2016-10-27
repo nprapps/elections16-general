@@ -113,7 +113,7 @@ def _select_presidential_national_results():
 
 def _select_presidential_county_results(statepostal):
     results = models.Result.select().where(
-        (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district'),
+        (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district') | (models.Result.level == 'state'),
         models.Result.officename == 'President',
         models.Result.statepostal == statepostal,
         models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
@@ -249,6 +249,7 @@ def render_presidential_county_results():
     for state in states:
         results = _select_presidential_county_results(state.statepostal)
         serialized_results = _serialize_by_key(results, PRESIDENTIAL_COUNTY_SELECTIONS, 'fipscode')
+
         filename = 'presidential-{0}-counties.json'.format(state.statepostal.lower())
         _write_json_file(serialized_results, filename)
 
@@ -292,12 +293,6 @@ def render_state_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
     for state in states:
-        president = models.Result.select().where(
-            models.Result.level == 'state',
-            models.Result.officename == 'President',
-            models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
-            models.Result.statepostal == state.statepostal
-        )
         senate = models.Result.select().where(
             models.Result.level == 'state',
             models.Result.officename == 'U.S. Senate',
@@ -320,7 +315,7 @@ def render_state_results():
         )
 
         state_results = {}
-        queries = [president, senate, house, governor, ballot_measures]
+        queries = [senate, house, governor, ballot_measures]
         for query in queries:
             results_key = [ k for k,v in locals().items() if v is query][0]
             if results_key != 'query':
@@ -375,16 +370,22 @@ def _serialize_by_key(results, selections, key):
     for result in results:
         result_dict = model_to_dict(result, backrefs=True, only=selections)
 
-        if not serialized_results.get(result_dict[key]):
-            serialized_results[result_dict[key]] = []
-
         if result.level not in uncallable_levels:
             _set_meta(result, result_dict)
 
         if result.officename in pickup_offices:
             _set_pickup(result, result_dict)
 
-        serialized_results[result_dict[key]].append(result_dict)
+        # handle state results in the county files
+        if key == 'fipscode' and result.level == 'state':
+            dict_key = 'state'
+        else:
+            dict_key = result_dict[key]
+
+        if not serialized_results.get(result_dict[key]):
+            serialized_results[dict_key] = []
+
+        serialized_results[dict_key].append(result_dict)
 
     return serialized_results
 
