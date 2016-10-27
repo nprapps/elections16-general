@@ -210,7 +210,7 @@ def render_top_level_numbers():
     presidential_results = _select_presidential_state_results()
     senate_results = _select_senate_results()
     house_results = _select_all_house_results()
-    
+
     electoral_totals = _calculate_electoral_votes(presidential_results)
 
     for result in senate_results:
@@ -371,7 +371,7 @@ def _serialize_for_big_board(results, selections, key='raceid'):
 
 def _serialize_by_key(results, selections, key):
     serialized_results = {}
-    
+
     for result in results:
         result_dict = model_to_dict(result, backrefs=True, only=selections)
 

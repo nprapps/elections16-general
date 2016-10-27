@@ -6,13 +6,19 @@ Commands that update or process the application data.
 import app_config
 import copytext
 import csv
+import simplejson as json
 import yaml
-import json
+import requests
 
 from oauth import get_document
 from fabric.api import execute, hide, local, task, settings, shell_env
 from fabric.state import env
 from models import models
+from time import sleep
+
+CENSUS_REPORTER_URL = 'http://api.censusreporter.org/1.0/data/show/acs2014_5yr'
+FIPS_TEMPLATE = '05000US{0}'
+CENSUS_TABLES = ['B01003', 'B02001', 'B03003', 'B19013', 'B15003']
 
 @task
 def bootstrap_db():
@@ -51,6 +57,7 @@ def create_tables():
     models.Result.create_table()
     models.Call.create_table()
     models.RaceMeta.create_table()
+    models.CensusData.create_table()
 
 @task
 def delete_results(mode):
@@ -209,43 +216,148 @@ def build_current_congress():
                 elif current_term['type'] == 'rep':
                     house_writer.writerow(obj)
 
+@task
+def get_census_data(start_state='AA'):
+    state_results = models.Result.select(models.Result.statepostal).distinct().order_by(models.Result.statepostal)
+
+    for state_result in state_results:
+        state = state_result.statepostal
+
+        sorts = sorted([start_state, state])
+        
+        if sorts[0] == state:
+            print('skipping', state)
+            continue
+
+        print('getting', state)
+        output = {}
+        fips_results = models.Result.select(models.Result.fipscode).distinct().where(models.Result.statepostal == state).order_by(models.Result.fipscode)
+        for result in fips_results:
+            if result.fipscode:
+                geo_id = FIPS_TEMPLATE.format(result.fipscode)
+                params = {
+                    'geo_ids': geo_id,
+                    'table_ids': ','.join(CENSUS_TABLES)
+                }
+                response = requests.get(CENSUS_REPORTER_URL, params=params)
+                if response.status_code == 200:
+                    print('fipscode succeeded', result.fipscode)
+                    output[result.fipscode] = response.json()
+                    sleep(2)
+                else:
+                    print('fipscode failed:', result.fipscode, response.status_code)
+                    sleep(10)
+                    continue
+
+        with open('data/census/{0}.json'.format(state), 'w') as f:
+            json.dump(output, f)
+
+
+@task
+def extract_census_data(fipscode, census_json):
+    fips_census = census_json.get(fipscode)
+    if fips_census:
+        data = fips_census.get('data')
+        for county, tables in data.items():
+            population = tables['B01003']['estimate']
+            race = tables['B02001']['estimate']
+            hispanic = tables['B03003']['estimate']
+            education = tables['B15003']['estimate']
+            income = tables['B19013']['estimate']
+
+            total_population = population['B01003001']
+
+            race_total = race['B02001001']
+            percent_white = race['B02001002'] / race_total
+            percent_black = race['B02001003'] / race_total
+
+            hispanic_total = hispanic['B03003001']
+            percent_hispanic = hispanic['B03003003'] / hispanic_total
+             
+            median_income = income['B19013001']
+
+            ed_total_population = education['B15003001']
+            bachelors = education['B15003022']
+            masters = education['B15003023']
+            professional = education['B15003024']
+            doctoral = education['B15003025']
+            percent_bachelors = (bachelors + masters + professional + doctoral) / ed_total_population
+
+            return {
+                'population': total_population,
+                'percent_white': percent_white,
+                'percent_black': percent_black,
+                'percent_hispanic': percent_hispanic,
+                'median_income': median_income,
+                'percent_bachelors': percent_bachelors
+            }
+    else:
+        return None
+
+def extract_2012_data(fipscode, filename):
+    with open(filename) as f:
+        reader = csv.DictReader(f)
+        obama_row = [row for row in reader if row['fipscode'] == fipscode and row['last'] == 'Obama']
+        f.seek(0)
+        romney_row = [row for row in reader if row['fipscode'] == fipscode and row['last'] == 'Romney']
+
+
+        if obama_row and romney_row:
+            obama_result = obama_row[0]['votepct']
+            romney_result = romney_row[0]['votepct']
+
+            difference = (float(obama_result) * 100) - (float(romney_result) * 100)
+
+            if difference > 0:
+                margin = 'D +{0}'.format(round(difference))
+            else:
+                margin = 'R +{0}'.format(round(abs(difference)))
+
+            return margin
+        
+        else:
+            return None
+
+def extract_unemployment_data(fipscode, filename):
+    with open(filename) as f:
+        reader = csv.DictReader(f)
+        state_fips = fipscode[:2]
+        county_fips = fipscode[-3:]
+        unemployment_row = [row for row in reader if row['State FIPS Code'] == state_fips and row['County FIPS Code'] == county_fips]
+        if unemployment_row:
+            unemployment_rate = unemployment_row[0]['Unemployment Rate (%)']
+            return float(unemployment_rate.strip())
+        else:
+            return None
 
 @task
 def save_old_data():
-    with open('data/unemployment.csv') as f:
-        unemployment_reader = csv.DictReader(f)
+    state_results = models.Result.select(models.Result.statepostal).distinct().order_by(models.Result.statepostal)
 
-        data = {}
+    for state_result in state_results:
+        state = state_result.statepostal
+        print('getting', state)
+        output = {}
 
-        for row in unemployment_reader:
-            full_fips = row['State FIPS Code'] + row['County FIPS Code']
-            rate = row['Unemployment Rate (%)']
-            obama_result = 0
-            romney_result = 0
-            winner = ''
-            advantage = 0
-            with open('data/twentyTwelve.csv') as g:
-                twentyTwelve_reader = csv.DictReader(g)
-                for county in twentyTwelve_reader:
-                    if county['fipscode'] == full_fips and county['last'] == 'Obama':
-                        obama_result = county['votepct']
-                    elif county['fipscode'] == full_fips and county['last'] == 'Romney':
-                        romney_result = county['votepct']
-            difference = float(obama_result) - float(romney_result)
-            if difference > 0:
-                winner = 'Obama'
-                advantage = abs(difference)
-            else:
-                winner = 'Romney'
-                advantage = abs(difference)
+        with open('data/census/{0}.json'.format(state)) as c:
+            census_json = json.load(c)
+
+        fips_results = models.Result.select(models.Result.fipscode).distinct().where(models.Result.statepostal == state, models.Result.fipscode != None).order_by(models.Result.fipscode)
+        for result in fips_results:
+            print('extracting', result.fipscode)
+
+            unemployment = extract_unemployment_data(result.fipscode, 'data/unemployment.csv')
+            past_margin = extract_2012_data(result.fipscode, 'data/twentyTwelve.csv')
+            census = extract_census_data(result.fipscode, census_json)
 
             this_row = {
-                'unemployment': rate,
-                'winner': winner,
-                'advantage': advantage
+                'unemployment': unemployment,
+                'past_margin': past_margin,
+                'census': census
             }
-            data[full_fips] = this_row
-            print(full_fips)
 
-        with open('data/fixed-data.json', 'w') as datafile:
-            json.dump(data, datafile)
+            output[result.fipscode] = this_row
+
+
+        with open('data/extra_data/{0}-extra.json'.format(state.lower()), 'w') as datafile:
+            json.dump(output, datafile)
