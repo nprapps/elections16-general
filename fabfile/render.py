@@ -382,7 +382,7 @@ def _serialize_by_key(results, selections, key):
         else:
             dict_key = result_dict[key]
 
-        if not serialized_results.get(result_dict[key]):
+        if not serialized_results.get(dict_key):
             serialized_results[dict_key] = []
 
         serialized_results[dict_key].append(result_dict)
@@ -426,8 +426,6 @@ def _calculate_bop(result, bop):
     if result.is_pickup():
         bop[party]['pickups'] += 1
         bop[result.meta[0].current_party]['pickups'] -= 1
-
-
 
 def _write_json_file(serialized_results, filename):
     with open('{0}/{1}'.format(app_config.DATA_OUTPUT_FOLDER, filename), 'w') as f:
