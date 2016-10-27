@@ -18,7 +18,7 @@ from time import sleep
 
 CENSUS_REPORTER_URL = 'http://api.censusreporter.org/1.0/data/show/acs2014_5yr'
 FIPS_TEMPLATE = '05000US{0}'
-CENSUS_TABLES = ['B01001', 'B02001', 'B19013', 'B15003']
+CENSUS_TABLES = ['B01003', 'B02001', 'B03003', 'B19013', 'B15003']
 
 @task
 def bootstrap_db():
@@ -116,7 +116,6 @@ def load_results(mode):
             print("ERROR GETTING MAIN RESULTS")
             print(first_cmd_output.stderr)
 
-
 @task
 def create_calls():
     """
@@ -187,6 +186,7 @@ def build_current_congress():
 
     house_fieldnames = ['first', 'last', 'party', 'state', 'seat']
     senate_fieldnames = ['first', 'last', 'party', 'state']
+
     with open('data/house-seats.csv', 'w') as h, open('data/senate-seats.csv', 'w') as s:
         house_writer = csv.DictWriter(h, fieldnames=house_fieldnames)
         house_writer.writeheader()
@@ -252,3 +252,112 @@ def get_census_data(start_state='AA'):
         with open('data/census/{0}.json'.format(state), 'w') as f:
             json.dump(output, f)
 
+
+@task
+def extract_census_data(fipscode, census_json):
+    fips_census = census_json.get(fipscode)
+    if fips_census:
+        data = fips_census.get('data')
+        for county, tables in data.items():
+            population = tables['B01003']['estimate']
+            race = tables['B02001']['estimate']
+            hispanic = tables['B03003']['estimate']
+            education = tables['B15003']['estimate']
+            income = tables['B19013']['estimate']
+
+            total_population = population['B01003001']
+
+            race_total = race['B02001001']
+            percent_white = race['B02001002'] / race_total
+            percent_black = race['B02001003'] / race_total
+
+            hispanic_total = hispanic['B03003001']
+            percent_hispanic = hispanic['B03003003'] / hispanic_total
+             
+            median_income = income['B19013001']
+
+            ed_total_population = education['B15003001']
+            bachelors = education['B15003022']
+            masters = education['B15003023']
+            professional = education['B15003024']
+            doctoral = education['B15003025']
+            percent_bachelors = (bachelors + masters + professional + doctoral) / ed_total_population
+
+            return {
+                'population': total_population,
+                'percent_white': percent_white,
+                'percent_black': percent_black,
+                'percent_hispanic': percent_hispanic,
+                'median_income': median_income,
+                'percent_bachelors': percent_bachelors
+            }
+    else:
+        return None
+
+def extract_2012_data(fipscode, filename):
+    with open(filename) as f:
+        reader = csv.DictReader(f)
+        obama_row = [row for row in reader if row['fipscode'] == fipscode and row['last'] == 'Obama']
+        f.seek(0)
+        romney_row = [row for row in reader if row['fipscode'] == fipscode and row['last'] == 'Romney']
+
+
+        if obama_row and romney_row:
+            obama_result = obama_row[0]['votepct']
+            romney_result = romney_row[0]['votepct']
+
+            difference = (float(obama_result) * 100) - (float(romney_result) * 100)
+
+            if difference > 0:
+                margin = 'D +{0}'.format(round(difference))
+            else:
+                margin = 'R +{0}'.format(round(abs(difference)))
+
+            return margin
+        
+        else:
+            return None
+
+def extract_unemployment_data(fipscode, filename):
+    with open(filename) as f:
+        reader = csv.DictReader(f)
+        state_fips = fipscode[:2]
+        county_fips = fipscode[-3:]
+        unemployment_row = [row for row in reader if row['State FIPS Code'] == state_fips and row['County FIPS Code'] == county_fips]
+        if unemployment_row:
+            unemployment_rate = unemployment_row[0]['Unemployment Rate (%)']
+            return float(unemployment_rate.strip())
+        else:
+            return None
+
+@task
+def save_old_data():
+    state_results = models.Result.select(models.Result.statepostal).distinct().order_by(models.Result.statepostal)
+
+    for state_result in state_results:
+        state = state_result.statepostal
+        print('getting', state)
+        output = {}
+
+        with open('data/census/{0}.json'.format(state)) as c:
+            census_json = json.load(c)
+
+        fips_results = models.Result.select(models.Result.fipscode).distinct().where(models.Result.statepostal == state, models.Result.fipscode != None).order_by(models.Result.fipscode)
+        for result in fips_results:
+            print('extracting', result.fipscode)
+
+            unemployment = extract_unemployment_data(result.fipscode, 'data/unemployment.csv')
+            past_margin = extract_2012_data(result.fipscode, 'data/twentyTwelve.csv')
+            census = extract_census_data(result.fipscode, census_json)
+
+            this_row = {
+                'unemployment': unemployment,
+                'past_margin': past_margin,
+                'census': census
+            }
+
+            output[result.fipscode] = this_row
+
+
+        with open('data/extra_data/{0}-extra.json'.format(state.lower()), 'w') as datafile:
+            json.dump(output, datafile)
