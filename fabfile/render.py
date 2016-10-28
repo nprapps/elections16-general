@@ -317,10 +317,9 @@ def render_state_results():
         state_results = {}
         queries = [senate, house, governor, ballot_measures]
         for query in queries:
-            results_key = [ k for k,v in locals().items() if v is query][0]
-            if results_key != 'query':
-                selectors = SELECTIONS_LOOKUP[results_key]
-                state_results[results_key] = _serialize_by_key(query, selectors, 'raceid')
+            results_key = [ k for k,v in locals().items() if v is query and k != 'query'][0]
+            selectors = SELECTIONS_LOOKUP[results_key]
+            state_results[results_key] = _serialize_by_key(query, selectors, 'raceid')
 
         filename = '{0}.json'.format(state.statepostal.lower())
         _write_json_file(state_results, filename)
