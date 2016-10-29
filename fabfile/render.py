@@ -1,4 +1,5 @@
 import app_config
+import logging
 import multiprocessing
 import os
 import re
@@ -15,6 +16,10 @@ from pytz import timezone
 from time import time
 
 from . import utils
+
+logging.basicConfig(format=app_config.LOG_FORMAT)
+logger = logging.getLogger(__name__)
+logger.setLevel(app_config.LOG_LEVEL)
 
 NUM_CORES = multiprocessing.cpu_count() * 4
 
@@ -462,17 +467,29 @@ def render_all():
 @task
 def render_all_national():
     render_top_level_numbers()
+    logger.info('rendered top level')
     render_presidential_state_results()
+    logger.info('rendered map')
     render_presidential_big_board()
+    logger.info('rendered p board')
     render_senate_results()
+    logger.info('rendered s board')
     render_governor_results()
+    logger.info('rendered g board')
     render_ballot_measure_results()
+    logger.info('rendered b board')
     render_house_results()
+    logger.info('rendered h board')
     render_state_results()
+    logger.info('rendered all states')
 
 @task
 def render_presidential_files():
     render_top_level_numbers()
+    logger.info('rendered top level')
     render_presidential_state_results()
+    logger.info('rendered map')
     render_presidential_county_results()
+    logger.info('rendered all counties')
     render_presidential_big_board()
+    logger.info('rendered p big board')
