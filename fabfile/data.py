@@ -94,7 +94,6 @@ def load_results(mode):
     cmd = 'elex results {0} {1} > {2}/first_query.csv'.format(election_date, flags, app_config.ELEX_OUTPUT_FOLDER)
     districts_cmd = 'elex results {0} {1} | csvgrep -c level -m district > {2}/districts.csv'.format(election_date, app_config.ELEX_DISTRICTS_FLAGS, app_config.ELEX_OUTPUT_FOLDER)
 
-
     with shell_env(**app_config.database):
         with settings(warn_only=True), hide('output', 'running'):
             first_cmd_output = local(cmd, capture=True)
@@ -116,6 +115,8 @@ def load_results(mode):
             print("ERROR GETTING MAIN RESULTS")
             print(first_cmd_output.stderr)
 
+    print('results loaded')
+    
 @task
 def create_calls():
     """
