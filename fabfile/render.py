@@ -1,4 +1,5 @@
 import app_config
+import multiprocessing
 import os
 import re
 import shutil
@@ -7,12 +8,15 @@ import simplejson as json
 from datetime import date, datetime
 from fabric.api import execute, hide, local, task, settings, shell_env
 from fabric.state import env
+from joblib import Parallel, delayed
 from models import models
 from playhouse.shortcuts import model_to_dict
 from pytz import timezone
 from time import time
 
 from . import utils
+
+NUM_CORES = multiprocessing.cpu_count() * 4
 
 COMMON_SELECTIONS = [
     models.Result.electtotal,
@@ -112,14 +116,15 @@ def _select_presidential_national_results():
     return results
 
 def _select_presidential_county_results(statepostal):
-    results = models.Result.select().where(
-        (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district') | (models.Result.level == 'state'),
-        models.Result.officename == 'President',
-        models.Result.statepostal == statepostal,
-        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
-    )
+    with models.db.execution_context() as ctx:
+        results = models.Result.select().where(
+            (models.Result.level == 'county') | (models.Result.level == 'township') | (models.Result.level == 'district') | (models.Result.level == 'state'),
+            models.Result.officename == 'President',
+            models.Result.statepostal == statepostal,
+            models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
+        )
 
-    return results
+        return results
 
 def _select_governor_results():
     results = models.Result.select().where(
@@ -246,12 +251,16 @@ def render_presidential_state_results():
 def render_presidential_county_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
-    for state in states:
-        results = _select_presidential_county_results(state.statepostal)
-        serialized_results = _serialize_by_key(results, PRESIDENTIAL_COUNTY_SELECTIONS, 'fipscode')
+    Parallel(n_jobs=NUM_CORES)(delayed(_render_county)(state.statepostal) for state in states)
+    # for state in states:
+        # _render_county(state.statepostal)
 
-        filename = 'presidential-{0}-counties.json'.format(state.statepostal.lower())
-        _write_json_file(serialized_results, filename)
+def _render_county(statepostal):
+    results = _select_presidential_county_results(statepostal)
+    serialized_results = _serialize_by_key(results, PRESIDENTIAL_COUNTY_SELECTIONS, 'fipscode')
+
+    filename = 'presidential-{0}-counties.json'.format(statepostal.lower())
+    _write_json_file(serialized_results, filename)
 
 @task
 def render_presidential_big_board():
@@ -292,26 +301,29 @@ def render_ballot_measure_results():
 def render_state_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
-    for state in states:
+    Parallel(n_jobs=NUM_CORES)(delayed(_render_state)(state.statepostal) for state in states)
+
+def _render_state(statepostal):
+    with models.db.execution_context() as ctx:
         senate = models.Result.select().where(
             models.Result.level == 'state',
             models.Result.officename == 'U.S. Senate',
-            models.Result.statepostal == state.statepostal
+            models.Result.statepostal == statepostal
         )
         house = models.Result.select().where(
             models.Result.level == 'state',
             models.Result.officename == 'U.S. House',
-            models.Result.statepostal == state.statepostal
+            models.Result.statepostal == statepostal
         )
         governor = models.Result.select().where(
             models.Result.level == 'state',
             models.Result.officename == 'Governor',
-            models.Result.statepostal == state.statepostal
+            models.Result.statepostal == statepostal
         )
         ballot_measures = models.Result.select().where(
             models.Result.level == 'state',
             models.Result.is_ballot_measure == True,
-            models.Result.statepostal == state.statepostal
+            models.Result.statepostal == statepostal
         )
 
         state_results = {}
@@ -321,9 +333,10 @@ def render_state_results():
             selectors = SELECTIONS_LOOKUP[results_key]
             state_results[results_key] = _serialize_by_key(query, selectors, 'raceid')
 
-        filename = '{0}.json'.format(state.statepostal.lower())
+        filename = '{0}.json'.format(statepostal.lower())
         _write_json_file(state_results, filename)
 
+        
 uncallable_levels = ['county', 'township']
 pickup_offices = ['U.S. House', 'U.S. Senate']
 
@@ -364,29 +377,30 @@ def _serialize_for_big_board(results, selections, key='raceid'):
 
 
 def _serialize_by_key(results, selections, key):
-    serialized_results = {}
+    with models.db.execution_context() as ctx:
+        serialized_results = {}
 
-    for result in results:
-        result_dict = model_to_dict(result, backrefs=True, only=selections)
+        for result in results:
+            result_dict = model_to_dict(result, backrefs=True, only=selections)
 
-        if result.level not in uncallable_levels:
-            _set_meta(result, result_dict)
+            if result.level not in uncallable_levels:
+                _set_meta(result, result_dict)
 
-        if result.officename in pickup_offices:
-            _set_pickup(result, result_dict)
+            if result.officename in pickup_offices:
+                _set_pickup(result, result_dict)
 
-        # handle state results in the county files
-        if key == 'fipscode' and result.level == 'state':
-            dict_key = 'state'
-        else:
-            dict_key = result_dict[key]
+            # handle state results in the county files
+            if key == 'fipscode' and result.level == 'state':
+                dict_key = 'state'
+            else:
+                dict_key = result_dict[key]
 
-        if not serialized_results.get(dict_key):
-            serialized_results[dict_key] = []
+            if not serialized_results.get(dict_key):
+                serialized_results[dict_key] = []
 
-        serialized_results[dict_key].append(result_dict)
+            serialized_results[dict_key].append(result_dict)
 
-    return serialized_results
+        return serialized_results
 
 def _set_meta(result, result_dict):
     meta = models.RaceMeta.get(models.RaceMeta.result_id == result.id)

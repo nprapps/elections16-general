@@ -17,6 +17,7 @@ elex==2.4.1
 gunicorn==19.1.1
 httplib2==0.9
 jmespath==0.2.1
+joblib==0.10.3
 nose==1.2.1
 odict==1.5.1
 openpyxl==2.2.0
