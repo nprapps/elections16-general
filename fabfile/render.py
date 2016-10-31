@@ -243,7 +243,7 @@ def render_presidential_state_results():
     national_serialized_results = _serialize_by_key(national_results, PRESIDENTIAL_STATE_SELECTIONS, 'statepostal')
 
     for result in national_serialized_results['US']:
-        result['npr_electwon'] = electoral_totals[result['party']]
+        result['npr_electwon'] = electoral_totals[result['last']]
 
     all_results = {**state_serialized_results, **national_serialized_results}
 
@@ -254,8 +254,6 @@ def render_presidential_county_results():
     states = models.Result.select(models.Result.statepostal).distinct()
 
     Parallel(n_jobs=NUM_CORES)(delayed(_render_county)(state.statepostal) for state in states)
-    # for state in states:
-        # _render_county(state.statepostal)
 
 def _render_county(statepostal):
     results = _select_presidential_county_results(statepostal)
@@ -414,18 +412,17 @@ def _set_pickup(result, result_dict):
 
 def _calculate_electoral_votes(results):
     electoral_totals = {
-        'Dem': 0,
-        'GOP': 0,
-        'Ind': 0,
-        'Lib': 0,
-        'Grn': 0,
-        'BFA': 0
+        'Clinton': 0,
+        'Trump': 0,
+        'Johnson': 0,
+        'Stein': 0,
+        'McMullin': 0,
     }
 
     for result in results:
         if result.is_npr_winner():
             if not (result.level == 'state' and (result.statename == 'Maine' or result.statename == 'Nebraska')):
-                electoral_totals[result.party] += result.electtotal
+                electoral_totals[result.last] += result.electtotal
 
     return electoral_totals
 
