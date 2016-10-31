@@ -349,7 +349,7 @@ def _render_state(statepostal):
         for query in queries:
             results_key = [ k for k,v in locals().items() if v is query and k != 'query'][0]
             selectors = SELECTIONS_LOOKUP[results_key]
-            state_results['results'][results_key] = _serialize_by_key(query, selectors, 'raceid')
+            state_results['results'][results_key] = _serialize_by_key(query, selectors, 'raceid', collate_other=True)
             if not state_results['last_updated'] or state_results['results'][results_key]['last_updated'] > state_results['last_updated']:
                 state_results['last_updated'] = state_results['results'][results_key]['last_updated']
 
