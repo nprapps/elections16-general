@@ -340,12 +340,17 @@ def _render_state(statepostal):
             models.Result.statepostal == statepostal
         )
 
-        state_results = {}
+        state_results = {
+            'results': {},
+            'last_updated': None
+        }
         queries = [senate, house, governor, ballot_measures]
         for query in queries:
             results_key = [ k for k,v in locals().items() if v is query and k != 'query'][0]
             selectors = SELECTIONS_LOOKUP[results_key]
-            state_results[results_key] = _serialize_by_key(query, selectors, 'raceid')
+            state_results['results'][results_key] = _serialize_by_key(query, selectors, 'raceid')
+            if not state_results['last_updated'] or state_results['results'][results_key]['last_updated'] > state_results['last_updated']:
+                state_results['last_updated'] = state_results['results'][results_key]['last_updated']
 
         filename = '{0}.json'.format(statepostal.lower())
         _write_json_file(state_results, filename)
@@ -474,7 +479,7 @@ def get_last_updated(serialized_results):
 
         elif isinstance(val, dict):
             for key, val in val.items():
-                if val[0].get('npr_winner') or val[0]['precinctsreporting'] > 0:
+                if val[0]['precinctsreporting'] > 0:
                     for result in val:
                         if not last_updated or result['lastupdated'] > last_updated:
                             last_updated = result['lastupdated']
