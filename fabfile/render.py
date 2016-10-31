@@ -176,10 +176,11 @@ def render_top_level_numbers():
         'total_seats': 100,
         'majority': 51,
         'uncalled_races': 34,
+        'last_updated': None,
         'Dem': {
             'seats': 34,
             'pickups': 0,
-            'needed': 17
+            'needed': 17,
         },
         'GOP': {
             'seats': 30,
@@ -197,6 +198,7 @@ def render_top_level_numbers():
         'total_seats': 435,
         'majority': 218,
         'uncalled_races': 435,
+        'last_updated': None,
         'Dem': {
             'seats': 0,
             'pickups': 0,
@@ -226,10 +228,18 @@ def render_top_level_numbers():
     for result in house_results:
         _calculate_bop(result, house_bop)
 
+    if senate_bop['last_updated'] > house_bop['last_updated'] or senate_bop['last_updated'] == house_bop['last_updated']:
+        last_updated = senate_bop['last_updated']
+    elif senate_bop['last_updated'] > house_bop['last_updated']:
+        last_updated = house_bop['last_updated']
+    else:
+        last_updated = datetime.utcnow()
+
     data = {
         'electoral_college': electoral_totals,
         'senate_bop': senate_bop,
-        'house_bop': house_bop
+        'house_bop': house_bop,
+        'last_updated': last_updated
     }
 
     _write_json_file(data, 'top-level-results.json')
@@ -448,6 +458,9 @@ def _calculate_bop(result, bop):
     if result.is_pickup():
         bop[party]['pickups'] += 1
         bop[result.meta[0].current_party]['pickups'] -= 1
+
+    if not bop['last_updated'] or result.lastupdated > bop['last_updated']:
+        bop['last_updated'] = result.lastupdated
 
 def get_last_updated(serialized_results):
     last_updated = None
