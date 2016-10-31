@@ -242,10 +242,14 @@ def render_presidential_state_results():
     state_serialized_results = _serialize_by_key(state_results, PRESIDENTIAL_STATE_SELECTIONS, 'statepostal')
     national_serialized_results = _serialize_by_key(national_results, PRESIDENTIAL_STATE_SELECTIONS, 'statepostal')
 
-    for result in national_serialized_results['US']:
+    for result in national_serialized_results['results']['US']:
         result['npr_electwon'] = electoral_totals[result['last']]
 
-    all_results = {**state_serialized_results, **national_serialized_results}
+    all_results = {
+        'results': {**state_serialized_results['results'], **national_serialized_results['results']},
+        'last_updated': state_serialized_results['last_updated']
+    }
+
 
     _write_json_file(all_results, 'presidential-national.json')
 
@@ -341,7 +345,9 @@ uncallable_levels = ['county', 'township']
 pickup_offices = ['U.S. House', 'U.S. Senate']
 
 def _serialize_for_big_board(results, selections, key='raceid'):
-    serialized_results = {}
+    serialized_results = {
+        'results': {}
+    }
 
     for result in results:
         result_dict = model_to_dict(result, backrefs=True, only=selections)
@@ -351,8 +357,8 @@ def _serialize_for_big_board(results, selections, key='raceid'):
         if result.officename in pickup_offices:
             _set_pickup(result, result_dict)
 
-        if not serialized_results.get(result.meta[0].first_results):
-            serialized_results[result.meta[0].first_results] = {}
+        if not serialized_results['results'].get(result.meta[0].first_results):
+            serialized_results['results'][result.meta[0].first_results] = {}
         
         # handle district-level presidential results
         if key == 'statepostal' and result.reportingunitname:
@@ -367,18 +373,21 @@ def _serialize_for_big_board(results, selections, key='raceid'):
         else:
             dict_key = result_dict[key]
 
-        time_bucket = serialized_results[result.meta[0].first_results]
+        time_bucket = serialized_results['results'][result.meta[0].first_results]
         if not time_bucket.get(dict_key):
             time_bucket[dict_key] = []
 
         time_bucket[dict_key].append(result_dict)
 
+    serialized_results['last_updated'] = get_last_updated(serialized_results)
     return serialized_results
 
 
 def _serialize_by_key(results, selections, key):
     with models.db.execution_context() as ctx:
-        serialized_results = {}
+        serialized_results = {
+            'results': {}
+        }
 
         for result in results:
             result_dict = model_to_dict(result, backrefs=True, only=selections)
@@ -395,11 +404,12 @@ def _serialize_by_key(results, selections, key):
             else:
                 dict_key = result_dict[key]
 
-            if not serialized_results.get(dict_key):
-                serialized_results[dict_key] = []
+            if not serialized_results['results'].get(dict_key):
+                serialized_results['results'][dict_key] = []
 
-            serialized_results[dict_key].append(result_dict)
+            serialized_results['results'][dict_key].append(result_dict)
 
+        serialized_results['last_updated'] = get_last_updated(serialized_results)
         return serialized_results
 
 def _set_meta(result, result_dict):
@@ -438,6 +448,28 @@ def _calculate_bop(result, bop):
     if result.is_pickup():
         bop[party]['pickups'] += 1
         bop[result.meta[0].current_party]['pickups'] -= 1
+
+def get_last_updated(serialized_results):
+    last_updated = None
+
+    for key, val in serialized_results['results'].items():
+        if isinstance(val, list):
+            if val[0]['precinctsreporting'] > 0:
+                for result in val:
+                    if not last_updated or result['lastupdated'] > last_updated:
+                        last_updated = result['lastupdated']
+
+        elif isinstance(val, dict):
+            for key, val in val.items():
+                if val[0].get('npr_winner') or val[0]['precinctsreporting'] > 0:
+                    for result in val:
+                        if not last_updated or result['lastupdated'] > last_updated:
+                            last_updated = result['lastupdated']
+
+    if not last_updated:
+        last_updated = datetime.utcnow()
+
+    return last_updated
 
 def _write_json_file(serialized_results, filename):
     with open('{0}/{1}'.format(app_config.DATA_OUTPUT_FOLDER, filename), 'w') as f:
