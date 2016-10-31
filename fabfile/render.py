@@ -104,6 +104,7 @@ def _select_presidential_state_results():
     results = models.Result.select().where(
         (models.Result.level == 'state') | (models.Result.level == 'district'),
         models.Result.officename == 'President',
+        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
     )
 
     return results
@@ -271,7 +272,7 @@ def render_presidential_county_results():
 
 def _render_county(statepostal):
     results = _select_presidential_county_results(statepostal)
-    serialized_results = _serialize_by_key(results, PRESIDENTIAL_COUNTY_SELECTIONS, 'fipscode')
+    serialized_results = _serialize_by_key(results, PRESIDENTIAL_COUNTY_SELECTIONS, 'fipscode', collate_other=True)
 
     filename = 'presidential-{0}-counties.json'.format(statepostal.lower())
     _write_json_file(serialized_results, filename)
@@ -398,7 +399,7 @@ def _serialize_for_big_board(results, selections, key='raceid'):
     return serialized_results
 
 
-def _serialize_by_key(results, selections, key):
+def _serialize_by_key(results, selections, key, collate_other=False):
     with models.db.execution_context() as ctx:
         serialized_results = {
             'results': {}
@@ -425,7 +426,10 @@ def _serialize_by_key(results, selections, key):
             serialized_results['results'][dict_key].append(result_dict)
 
         serialized_results['last_updated'] = get_last_updated(serialized_results)
-        serialized_results = collate_other_candidates(serialized_results)
+
+        if collate_other:
+            serialized_results = collate_other_candidates(serialized_results)
+
         return serialized_results
 
 def _set_meta(result, result_dict):
