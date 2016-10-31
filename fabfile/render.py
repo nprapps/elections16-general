@@ -89,6 +89,7 @@ RACE_META_SELECTIONS = [
 ]
 
 ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Clinton', 'Johnson', 'Stein', 'Trump', 'McMullin']
+ACCEPTED_PARTIES = ['Dem', 'GOP']
 
 SELECTIONS_LOOKUP = {
     'president': PRESIDENTIAL_STATE_SELECTIONS,
@@ -103,7 +104,6 @@ def _select_presidential_state_results():
     results = models.Result.select().where(
         (models.Result.level == 'state') | (models.Result.level == 'district'),
         models.Result.officename == 'President',
-        models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES
     )
 
     return results
@@ -123,7 +123,6 @@ def _select_presidential_county_results(statepostal):
             (models.Result.level == 'county') | (models.Result.level == 'state'),
             models.Result.officename == 'President',
             models.Result.statepostal == statepostal,
-            models.Result.last << ACCEPTED_PRESIDENTIAL_CANDIDATES,
         )
 
         return results
@@ -253,7 +252,8 @@ def render_presidential_state_results():
     national_serialized_results = _serialize_by_key(national_results, PRESIDENTIAL_STATE_SELECTIONS, 'statepostal')
 
     for result in national_serialized_results['results']['US']:
-        result['npr_electwon'] = electoral_totals[result['last']]
+        if result['last'] != 'Other':
+            result['npr_electwon'] = electoral_totals[result['last']]
 
     all_results = {
         'results': {**state_serialized_results['results'], **national_serialized_results['results']},
@@ -425,6 +425,7 @@ def _serialize_by_key(results, selections, key):
             serialized_results['results'][dict_key].append(result_dict)
 
         serialized_results['last_updated'] = get_last_updated(serialized_results)
+        serialized_results = collate_other_candidates(serialized_results)
         return serialized_results
 
 def _set_meta(result, result_dict):
@@ -452,7 +453,6 @@ def _calculate_electoral_votes(results):
     return electoral_totals
 
 def _calculate_bop(result, bop):
-    ACCEPTED_PARTIES = ['Dem', 'GOP']
 
     party = result.party if result.party in ACCEPTED_PARTIES else 'Other'
     if result.is_npr_winner():
@@ -466,6 +466,44 @@ def _calculate_bop(result, bop):
 
     if not bop['last_updated'] or result.lastupdated > bop['last_updated']:
         bop['last_updated'] = result.lastupdated
+
+
+def collate_other_candidates(serialized_results):
+    for key, val in serialized_results['results'].items():        
+        if isinstance(val, list):
+            other_votecount = 0
+            other_votepct = 0
+            other_winner = False
+            filtered = []
+            for result in val:
+                if result['officename'] == 'President' and result['level'] in ['state', 'district']:
+                    if result['last'] not in ACCEPTED_PRESIDENTIAL_CANDIDATES:
+                        other_votecount += result['votecount']
+                        other_votepct += result['votepct']
+                        if result.get('npr_winner') == True:
+                            other_winner = True
+                    else:
+                        filtered.append(result)
+                else:
+                    if result['party'] not in ACCEPTED_PARTIES:
+                        other_votecount += result['votecount']
+                        other_votepct += result['votepct']
+                        if result.get('npr_winner') == True:
+                            other_winner = True
+                    else:
+                        filtered.append(result)
+
+            filtered.append({
+                'first': '',
+                'last': 'Other',
+                'votecount': other_votecount,
+                'votepct': other_votepct,
+                'npr_winner': other_winner
+            })
+
+            serialized_results['results'][key] = filtered
+
+    return serialized_results
 
 def get_last_updated(serialized_results):
     last_updated = None
