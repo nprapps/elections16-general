@@ -107,7 +107,7 @@ def load_results(mode):
             with hide('output', 'running'):
                 district_cmd_output = local(districts_cmd, capture=True)
 
-            if district_cmd_output.return_code or first_cmd_output.return_code == 64:
+            if district_cmd_output.return_code or district_cmd_output.return_code == 64:
                 delete_results(mode)
                 with hide('output', 'running'):
                     local('csvstack {0}/first_query.csv {1}/districts.csv | psql {2} -c "COPY result FROM stdin DELIMITER \',\' CSV HEADER;"'.format(app_config.ELEX_OUTPUT_FOLDER, app_config.ELEX_OUTPUT_FOLDER, app_config.database['PGDATABASE']))
