@@ -89,7 +89,7 @@ RACE_META_SELECTIONS = [
 ]
 
 ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Clinton', 'Johnson', 'Stein', 'Trump', 'McMullin']
-ACCEPTED_PARTIES = ['Dem', 'GOP']
+ACCEPTED_PARTIES = ['Dem', 'GOP', 'Yes', 'No']
 
 SELECTIONS_LOOKUP = {
     'president': PRESIDENTIAL_STATE_SELECTIONS,
