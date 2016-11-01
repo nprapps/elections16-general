@@ -373,8 +373,8 @@ def _serialize_for_big_board(results, selections, key='raceid'):
         if result.officename in pickup_offices:
             _set_pickup(result, result_dict)
 
-        if not serialized_results['results'].get(result.meta[0].first_results):
-            serialized_results['results'][result.meta[0].first_results] = {}
+        if not serialized_results['results'].get(result.meta[0].poll_closing):
+            serialized_results['results'][result.meta[0].poll_closing] = {}
         
         # handle district-level presidential results
         if key == 'statepostal' and result.reportingunitname:
@@ -389,7 +389,7 @@ def _serialize_for_big_board(results, selections, key='raceid'):
         else:
             dict_key = result_dict[key]
 
-        time_bucket = serialized_results['results'][result.meta[0].first_results]
+        time_bucket = serialized_results['results'][result.meta[0].poll_closing]
         if not time_bucket.get(dict_key):
             time_bucket[dict_key] = []
 
