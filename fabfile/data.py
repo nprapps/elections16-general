@@ -19,7 +19,7 @@ from time import sleep
 
 CENSUS_REPORTER_URL = 'http://api.censusreporter.org/1.0/data/show/acs2014_5yr'
 FIPS_TEMPLATE = '05000US{0}'
-CENSUS_TABLES = ['B01003', 'B02001', 'B03003', 'B19013', 'B15003']
+CENSUS_TABLES = ['B01003', 'B02001', 'B03002', 'B19013', 'B15003']
 
 logging.basicConfig(format=app_config.LOG_FORMAT)
 logger = logging.getLogger(__name__)
@@ -240,7 +240,12 @@ def get_census_data(start_state='AA'):
         fips_results = models.Result.select(models.Result.fipscode).distinct().where(models.Result.statepostal == state).order_by(models.Result.fipscode)
         for result in fips_results:
             if result.fipscode:
-                geo_id = FIPS_TEMPLATE.format(result.fipscode)
+                if result.fipscode == '02000':
+                    geo_id = '04000US02'
+                elif result.fipscode == '46102':
+                    geo_id = FIPS_TEMPLATE.format('46113')
+                else:
+                    geo_id = FIPS_TEMPLATE.format(result.fipscode)
                 params = {
                     'geo_ids': geo_id,
                     'table_ids': ','.join(CENSUS_TABLES)
