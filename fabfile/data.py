@@ -272,18 +272,18 @@ def extract_census_data(fipscode, census_json):
         for county, tables in data.items():
             population = tables['B01003']['estimate']
             race = tables['B02001']['estimate']
-            hispanic = tables['B03003']['estimate']
+            hispanic = tables['B03002']['estimate']
             education = tables['B15003']['estimate']
             income = tables['B19013']['estimate']
 
             total_population = population['B01003001']
 
             race_total = race['B02001001']
-            percent_white = race['B02001002'] / race_total
             percent_black = race['B02001003'] / race_total
 
-            hispanic_total = hispanic['B03003001']
-            percent_hispanic = hispanic['B03003003'] / hispanic_total
+            hispanic_total = hispanic['B03002001']
+            percent_white = hispanic['B03002003'] / hispanic_total
+            percent_hispanic = hispanic['B03002012'] / hispanic_total
              
             median_income = income['B19013001']
 
