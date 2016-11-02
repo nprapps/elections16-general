@@ -480,7 +480,7 @@ def collate_other_candidates(serialized_results):
             other_winner = False
             filtered = []
             for result in val:
-                if result['officename'] == 'President' and result['level'] in ['state', 'district']:
+                if result['officename'] == 'President':
                     if result['last'] not in ACCEPTED_PRESIDENTIAL_CANDIDATES:
                         other_votecount += result['votecount']
                         other_votepct += result['votepct']
