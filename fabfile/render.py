@@ -384,10 +384,10 @@ def _serialize_for_big_board(results, selections, key='raceid'):
             serialized_results['results'][result.meta[0].poll_closing] = {}
         
         # handle district-level presidential results
-        if key == 'statepostal' and result.reportingunitname:
-            if result.reportingunitname == 'At Large':
-                continue
+        if key == 'statepostal' and result.officename == 'President' and result.statepostal in ['ME', 'NE'] and result.level == 'state':
+            continue
 
+        if key == 'statepostal' and result.reportingunitname:
             m = re.search(r'\d$', result.reportingunitname)
             if m is not None:
                 dict_key = '{0}-{1}'.format(result.statepostal, m.group())
