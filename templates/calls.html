@@ -94,7 +94,8 @@
                         <td class="col-ap-winner">
                             <button class="ap-winner btn btn-mini
                                 {% if result.call[0].accept_ap != True %} disabled {% endif %}
-                                {% if result.winner == False %} hidden {% endif %}
+                                {% if result.level == 'district' and result.electwon <= 0 %} hidden {% endif %}
+                                {% if result.winner == False and result.level != 'district' %} hidden {% endif %}
                                 {% if result.party == 'GOP' %} btn-danger {% endif %}
                                 {% if result.party == 'Dem' %} btn-primary {% endif %}
                                 {% if result.party == 'Other' %} btn-success {% endif %}">
