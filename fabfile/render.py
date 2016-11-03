@@ -85,7 +85,8 @@ CALLS_SELECTIONS = [
 RACE_META_SELECTIONS = [
     models.RaceMeta.poll_closing,
     models.RaceMeta.first_results,
-    models.RaceMeta.current_party
+    models.RaceMeta.current_party,
+    models.RaceMeta.expected
 ]
 
 ACCEPTED_PRESIDENTIAL_CANDIDATES = ['Clinton', 'Johnson', 'Stein', 'Trump', 'McMullin']
@@ -181,16 +182,19 @@ def render_top_level_numbers():
             'seats': 34,
             'pickups': 0,
             'needed': 17,
+            'expected': 8
         },
         'GOP': {
             'seats': 30,
             'pickups': 0,
-            'needed': 21
+            'needed': 21,
+            'expected': 14
         },
         'Other': {
             'seats': 2,
             'pickups': 0,
-            'needed': 49
+            'needed': 49,
+            'expected': 0
         }
     }
 
@@ -202,17 +206,20 @@ def render_top_level_numbers():
         'Dem': {
             'seats': 0,
             'pickups': 0,
-            'needed': 218
+            'needed': 218,
+            'expected': 178
         },
         'GOP': {
             'seats': 0,
             'pickups': 0,
-            'needed': 218
+            'needed': 218,
+            'expected': 202
         },
         'Other': {
             'seats': 0,
             'pickups': 0,
-            'needed': 218
+            'needed': 218,
+            'expected': 0
         }
     }
 
@@ -467,6 +474,12 @@ def _calculate_bop(result, bop):
     if result.is_pickup():
         bop[party]['pickups'] += 1
         bop[result.meta[0].current_party]['pickups'] -= 1
+
+    if result.is_expected():
+        bop[party]['expected'] -= 1
+
+    if result.is_not_expected():
+        bop[result.meta[0].expected]['expected'] -= 1
 
     if not bop['last_updated'] or result.lastupdated > bop['last_updated']:
         bop['last_updated'] = result.lastupdated
