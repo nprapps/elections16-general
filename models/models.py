@@ -100,7 +100,7 @@ class Result(BaseModel):
             return False
 
     def is_not_expected(self):
-        if self.is_npr_winner() and self.party.lower() == self.meta[0].expected:
+        if self.is_npr_winner() and self.party == self.meta[0].expected:
             return True
         else:
             return False
