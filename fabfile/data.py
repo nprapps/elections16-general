@@ -318,9 +318,9 @@ def extract_census_data(fipscode, census_json):
 def extract_2012_data(fipscode, filename):
     with open(filename) as f:
         reader = csv.DictReader(f)
-        obama_row = [row for row in reader if row['fipscode'] == fipscode and row['last'] == 'Obama']
+        obama_row = [row for row in reader if row['fipscode'] == fipscode and row['last'] == 'Obama' and row['level'] != 'township']
         f.seek(0)
-        romney_row = [row for row in reader if row['fipscode'] == fipscode and row['last'] == 'Romney']
+        romney_row = [row for row in reader if row['fipscode'] == fipscode and row['last'] == 'Romney' and row['level'] != 'township']
 
 
         if obama_row and romney_row:
