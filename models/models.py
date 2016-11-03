@@ -88,7 +88,7 @@ class Result(BaseModel):
         else:
             return False
 
-    def is_expected(self):
+    def is_not_expected(self):
         if self.is_npr_winner():
             if self.meta[0].expected == 'Dem' and self.party != 'Dem':
                 return True
@@ -97,13 +97,7 @@ class Result(BaseModel):
             else:
                 return False
         else:
-            return False
-
-    def is_not_expected(self):
-        if self.is_npr_winner() and self.party == self.meta[0].expected:
-            return True
-        else:
-            return False
+            return False        
 
 
 class Call(BaseModel):
