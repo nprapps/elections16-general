@@ -7,6 +7,7 @@ import app_config
 import copytext
 import csv
 import logging
+import math
 import simplejson as json
 import yaml
 import requests
@@ -19,7 +20,7 @@ from time import sleep
 
 CENSUS_REPORTER_URL = 'http://api.censusreporter.org/1.0/data/show/acs2014_5yr'
 FIPS_TEMPLATE = '05000US{0}'
-CENSUS_TABLES = ['B01003', 'B02001', 'B03002', 'B19013', 'B15003']
+CENSUS_TABLES = ['B01003', 'B02001', 'B03002', 'B19013', 'B15001']
 
 logging.basicConfig(format=app_config.LOG_FORMAT)
 logger = logging.getLogger(__name__)
@@ -283,7 +284,8 @@ def extract_census_data(fipscode, census_json):
             population = tables['B01003']['estimate']
             race = tables['B02001']['estimate']
             hispanic = tables['B03002']['estimate']
-            education = tables['B15003']['estimate']
+            education = tables['B15001']['estimate']
+            education_error = tables['B15001']['error']
             income = tables['B19013']['estimate']
 
             total_population = population['B01003001']
@@ -297,23 +299,94 @@ def extract_census_data(fipscode, census_json):
              
             median_income = income['B19013001']
 
-            ed_total_population = education['B15003001']
-            bachelors = education['B15003022']
-            masters = education['B15003023']
-            professional = education['B15003024']
-            doctoral = education['B15003025']
-            percent_bachelors = (bachelors + masters + professional + doctoral) / ed_total_population
+            percent_bachelors, error = calculate_percent_bachelors(education, education_error)
 
+            print(fipscode, percent_bachelors, error)
             return {
                 'population': total_population,
                 'percent_white': percent_white,
                 'percent_black': percent_black,
                 'percent_hispanic': percent_hispanic,
                 'median_income': median_income,
-                'percent_bachelors': percent_bachelors
+                'percent_bachelors': percent_bachelors,
+                'error': error
             }
     else:
         return None
+
+def calculate_percent_bachelors(education, education_error):
+    ed_total_population = education['B15001001']
+    
+    male_18_bachelors = education['B15001009']
+    male_18_grad = education['B15001010']
+    male_18 = male_18_bachelors + male_18_grad
+
+    male_25_bachelors = education['B15001017']
+    male_25_grad = education['B15001018']
+    male_25 = male_25_bachelors + male_25_grad
+
+    male_35_bachelors = education['B15001025']
+    male_35_grad = education['B15001026']
+    male_35 = male_35_bachelors + male_35_grad
+
+    male_45_bachelors = education['B15001033']
+    male_45_grad = education['B15001034']
+    male_45 = male_45_bachelors + male_45_grad
+
+    male_65_bachelors = education['B15001041']
+    male_65_grad = education['B15001042']
+    male_65 = male_65_bachelors + male_65_grad
+
+    male_total = male_18 + male_25 + male_35 + male_45 + male_65
+
+    female_18_bachelors = education['B15001050']
+    female_18_grad = education['B15001051']
+    female_18 = female_18_bachelors + female_18_grad
+
+    female_25_bachelors = education['B15001058']
+    female_25_grad = education['B15001059']
+    female_25 = female_25_bachelors + female_25_grad
+    
+    female_35_bachelors = education['B15001066']
+    female_35_grad = education['B15001067']
+    female_35 = female_35_bachelors + female_35_grad
+    
+    female_45_bachelors = education['B15001074']
+    female_45_grad = education['B15001075']
+    female_45 = female_45_bachelors + female_45_grad
+    
+    female_65_bachelors = education['B15001082']
+    female_65_grad = education['B15001083']
+    female_65 = female_65_bachelors + female_65_grad
+
+    female_total = female_18 + female_25 + female_35 + female_45 + female_65
+
+    percent_bachelors = (male_total + female_total) / ed_total_population
+    error = (math.sqrt(
+        math.pow(education_error['B15001009'], 2) + 
+        math.pow(education_error['B15001010'], 2) + 
+        math.pow(education_error['B15001017'], 2) +
+        math.pow(education_error['B15001018'], 2) +
+        math.pow(education_error['B15001025'], 2) +
+        math.pow(education_error['B15001026'], 2) +
+        math.pow(education_error['B15001033'], 2) +
+        math.pow(education_error['B15001034'], 2) +
+        math.pow(education_error['B15001041'], 2) +
+        math.pow(education_error['B15001042'], 2) +
+        math.pow(education_error['B15001049'], 2) +
+        math.pow(education_error['B15001050'], 2) +
+        math.pow(education_error['B15001051'], 2) +
+        math.pow(education_error['B15001058'], 2) +
+        math.pow(education_error['B15001059'], 2) +
+        math.pow(education_error['B15001066'], 2) +
+        math.pow(education_error['B15001067'], 2) +
+        math.pow(education_error['B15001074'], 2) +
+        math.pow(education_error['B15001075'], 2) +
+        math.pow(education_error['B15001082'], 2) +
+        math.pow(education_error['B15001083'], 2)
+    ) / ed_total_population)
+
+    return percent_bachelors, error
 
 def extract_2012_data(fipscode, filename):
     with open(filename) as f:
