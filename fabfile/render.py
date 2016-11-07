@@ -84,8 +84,8 @@ CALLS_SELECTIONS = [
 
 RACE_META_SELECTIONS = [
     models.RaceMeta.poll_closing,
-    models.RaceMeta.first_results,
     models.RaceMeta.current_party,
+    models.RaceMeta.full_poll_closing,
     models.RaceMeta.expected
 ]
 

@@ -115,6 +115,7 @@ class Call(BaseModel):
 class RaceMeta(BaseModel):
     result_id = ForeignKeyField(Result, related_name='meta')
     poll_closing = CharField(null=True)
+    full_poll_closing = CharField(null=True)
     first_results = CharField(null=True)
     current_party = CharField(null=True)
     expected = CharField(null=True)

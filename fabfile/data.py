@@ -159,6 +159,7 @@ def create_race_meta():
 
             meta_obj['poll_closing'] = calendar_row['time_est']
             meta_obj['first_results'] = calendar_row['first_results_est']
+            meta_obj['full_poll_closing'] = calendar_row['time_all_est']
 
         if result.level == 'state' and result.officename == 'U.S. House':
             seat = '{0}-{1}'.format(result.statepostal, result.seatnum)
