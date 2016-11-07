@@ -118,8 +118,3 @@ class RaceMeta(BaseModel):
     first_results = CharField(null=True)
     current_party = CharField(null=True)
     expected = CharField(null=True)
-
-class CensusData(BaseModel):
-    fipscode = CharField()
-    census_id = ForeignKeyField(Result, related_name='census')
-    data = JSONField()

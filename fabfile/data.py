@@ -62,7 +62,6 @@ def create_tables():
     models.Result.create_table()
     models.Call.create_table()
     models.RaceMeta.create_table()
-    models.CensusData.create_table()
 
 @task
 def delete_results(mode):
