@@ -565,6 +565,7 @@ def render_all():
 
 @task
 def render_all_national():
+    render_top_level_numbers()
     render_presidential_state_results()
     render_presidential_big_board()
     render_senate_results()
@@ -575,6 +576,7 @@ def render_all_national():
 
 @task
 def render_presidential_files():
+    render_top_level_numbers()
     render_presidential_state_results()
     render_presidential_county_results()
     render_presidential_big_board()

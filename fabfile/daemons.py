@@ -40,13 +40,11 @@ def main(run_once=False):
             if mode == 'fast':
                 logger.info('loading all national results')
                 execute('data.load_results', mode)
-                execute('deploy_top_level_numbers')
                 execute('deploy_national_data')
             
             if mode == 'slow':
                 logger.info('loading all presidential results')
                 execute('data.load_results', mode)
-                execute('deploy_top_level_numbers')
                 execute('deploy_presidential_data')
 
             if mode == 'fast':
