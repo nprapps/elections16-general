@@ -502,7 +502,8 @@ def collate_other_candidates(serialized_results):
                     else:
                         filtered.append(result)
                 else:
-                    if result['party'] not in ACCEPTED_PARTIES:
+
+                    if result['party'] not in ACCEPTED_PARTIES and (result['raceid'] != '36602' and result['last'] != 'Babinec'):
                         other_votecount += result['votecount']
                         other_votepct += result['votepct']
                         if result.get('npr_winner') == True:
