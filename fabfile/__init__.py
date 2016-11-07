@@ -138,8 +138,14 @@ def deploy_all_data():
     deploy_data_folder()
 
 @task
+def deploy_top_level_numbers():
+    render.render_top_level_numbers()
+    local('aws s3 sync {0}/top-level-results.json s3://{1}/{2}/data/ --acl public-read --cache-control max-age=5'.format(app_config.DATA_OUTPUT_FOLDER, app_config.S3_BUCKET, app_config.PROJECT_SLUG))
+
+@task
 def deploy_data_folder():
     local('aws s3 sync {0} s3://{1}/{2}/data/ --acl public-read --cache-control max-age=5'.format(app_config.DATA_OUTPUT_FOLDER, app_config.S3_BUCKET, app_config.PROJECT_SLUG))
+
 
 """
 Destruction
